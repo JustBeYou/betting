@@ -1,0 +1,16 @@
+{% extends "bootstrap/base.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- Put custom CSS/JS here -->
+{% endblock %}
+
+{% block body %}
+<!-- Build a custom look here that all pages can inherit. -->
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    {% block content %}
+    {% endblock %}
+  </div>
+</div>
+{% endblock %}
