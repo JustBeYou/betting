@@ -14,7 +14,8 @@ ODD_TYPES = {
 
 BOOKMAKERS = {
     "Bet365": 26,
-    "Pinnacle": 10
+    "Pinnacle": 10,
+    "1xBet": 55
 }
 
 def getTournaments():

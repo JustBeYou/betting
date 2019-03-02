@@ -17,7 +17,7 @@ from werkzeug.security import gen_salt
 
 from flaskskeleton.api import api
 from flaskskeleton.middleware import LoggingMiddleware
-from flaskskeleton.model import make_conn_str, db, Employee, User, Role
+from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -77,8 +77,8 @@ def init_webapp():
     Bootstrap(app)
 
     # Initialize Flask-Security
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
+    #user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    #security = Security(app, user_datastore)
 
     # Initialize Flask-SQLAlchemy
     db.app = app
@@ -91,27 +91,19 @@ def init_webapp():
       flask_sqlalchemy_db=db,
       preprocessors=dict(GET_MANY=[restless_api_auth_func]),
     )
-    manager.create_api(Employee, methods=['GET', 'POST', 'OPTIONS'])
+    #manager.create_api(Employee, methods=['GET', 'POST', 'OPTIONS'])
     return app
 
 from oddfeedsApi import *
 
 @app.route('/')
 def index():
-    bks = [
-    BOOKMAKERS["Pinnacle"]
-    ]
-    tps = [
-        ODD_TYPES["1"],
-        ODD_TYPES["X"],
-        ODD_TYPES["2"]
-    ]
-    data = getData(bks, tps)
-    return render_template('index.html', feed=data)
+    return render_template('index.html', matches=Match.query.filter(Match.odds.any()).all())
 
+@app.route('/match/<id>')
+def match(id):
+    return render_template('match.html', odds=Odd.query.filter_by(match_id=int(id)).all())
 
-@app.route('/protected')
-@auth_token_required
-def json_endpoint():
-    return jsonify({'username': current_user.email,
-                    'is_authenticated': current_user.is_authenticated})
+@app.route('/bye')
+def bye():
+    raise RuntimeError("Bye")

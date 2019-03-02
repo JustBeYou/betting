@@ -1,16 +1,9 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="alert alert-success">
-<button type="button" class="close" data-dismiss="alert">&times;</button>
-<strong>Yay!</strong> Everything looks like it is working.
-</div>
-
 <h1>
-Hello, world!
+Matches list
 </h1>
-
-<b>I was rendered using Jinja2 templates!</b>
 
 <table class="table">
 <tr>
@@ -20,12 +13,12 @@ Hello, world!
   <th>Away</th>
 </tr>
 <tbody>
-{% for e in feed['matches'] %}
+{% for e in matches %}
   <tr>
-    <td>{{ e['id'] }} </td>
-    <td>{{ e['stats']['start'] }}</td>
-    <td>{{ e['teams']['home'] }}</td>
-    <td>{{ e['teams']['away'] }}</td>
+    <td><a href="/match/{{e.id}}">{{ e.id }}</a></td>
+    <td>{{ e.time }}</td>
+    <td>{{ e.home }}</td>
+    <td>{{ e.away }}</td>
   </tr>
 {% endfor %}
 </tbody>

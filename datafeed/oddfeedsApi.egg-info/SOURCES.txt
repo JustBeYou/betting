@@ -1,6 +1,0 @@
-oddfeedsApi.py
-setup.py
-oddfeedsApi.egg-info/PKG-INFO
-oddfeedsApi.egg-info/SOURCES.txt
-oddfeedsApi.egg-info/dependency_links.txt
-oddfeedsApi.egg-info/top_level.txt

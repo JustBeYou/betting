@@ -6,44 +6,44 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, Rol
 
 db = SQLAlchemy()
 
-
-roles_users = db.Table('roles_users',
-  db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-  db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
-
-
-class Role(db.Model, RoleMixin):
+class Match(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(255))
+    time = db.Column(db.String(255))
+    home = db.Column(db.String(255))
+    away = db.Column(db.String(255))
+    odds = db.relationship('Odd', backref='match', lazy=True)
+    def __init__(self, id, time, home, away):
+        self.id = id
+        self.time = time
+        self.home = home
+        self.away = away
 
+class Bookmaker(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(255))
+    odds = db.relationship('Odd', backref='bookmaker', lazy=True)
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True)
-    password = db.Column(db.String(255))
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
-
-
-class Employee(db.Model):
-    """A database table for employees."""
-    __tablename__ = 'employee'
-    id = db.Column(db.Integer, primary_key=True)
-    first = db.Column(db.String(64))
-    last = db.Column(db.String(64))
-    position = db.Column(db.String(64))
-    salary = db.Column(db.Integer)
-    def __repr__(self):
-        return 'Employee(%r, %r, %r)' % repr(self.id, self.first, self.last)
-    def __init__(self, first, last, position, salary):
-        self.first = first
-        self.last = last
-        self.position = position
-        self.salary = salary
-
+class Odd(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    when = db.Column(db.String(255))
+    type_id = db.Column(db.Integer())
+    price = db.Column(db.Float())
+    period_id = db.Column(db.Integer())
+    match_id = db.Column(db.Integer(), db.ForeignKey('match.id'), nullable=False)
+    bookmaker_id = db.Column(db.Integer(), db.ForeignKey('bookmaker.id'), nullable=False)
+    nav = db.Column(db.String(2048))
+    def __init__(self, id, match_id, bookmaker_id, type_id, price, when, period_id, nav):
+        self.id = id
+        self.match_id = match_id
+        self.bookmaker_id = bookmaker_id
+        self.type_id = type_id
+        self.price = price
+        self.when = when
+        self.period_id = period_id
+        self.nav = nav
 
 def make_conn_str():
     """Make an local database file on disk."""
