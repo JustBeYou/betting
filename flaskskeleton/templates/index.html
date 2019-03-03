@@ -12,10 +12,15 @@ Matches list
   <th>Home</th>
   <th>Away</th>
 </tr>
+<form method="POST" action="/api/strategy1">
+<button class="btn btn-primary" type="submit">Strategy 1</button>
+{% for e in bookmakers %}
+<input type="radio" name="bookmaker" value="{{e.id}}"/>{{e.name}}
+{% endfor %}
 <tbody>
 {% for e in matches %}
   <tr>
-    <td><a href="/match/{{e.id}}">{{ e.id }}</a></td>
+    <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
     <td>{{ e.time }}</td>
     <td>{{ e.home }}</td>
     <td>{{ e.away }}</td>
@@ -23,5 +28,6 @@ Matches list
 {% endfor %}
 </tbody>
 </table>
+</form>
 
 {% endblock %}

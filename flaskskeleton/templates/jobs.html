@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>
+Jobs
+</h1>
+
+<table class="table">
+
+{% for e in jobs %}
+  <tr>
+    <td><a href="/job/{{e.id}}">{{e.id}}</a></td>
+  </tr>
+{% endfor %}
+</tbody>
+</table>
+</form>
+
+{% endblock %}

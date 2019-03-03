@@ -48,7 +48,7 @@ def runserver(*args, **kwargs):
     # space, because it's annoying to have to pass these in to the `run` method.
     config = ConfigObj('config/sample.config', configspec='config/sample.configspec')
     app.config_obj = config
-    app.run(*args, **kwargs)
+    app.run(host='0.0.0.0', *args, **kwargs)
 
 
 if __name__ == "__main__":

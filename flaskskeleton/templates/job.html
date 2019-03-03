@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>
+Clusters
+</h1>
+
+<script>
+setTimeout(function() {
+  location.reload();
+}, 5000);
+</script>
+
+{% for e in clusters %}
+<h3>Cluster {{e.id}}</h3>
+<table class="table">
+<tbody>
+  <tr>
+    <th>Event ID</th>
+    <th>Bet type</th>
+    <th>Price</th>
+    <th>Bet amount</th>
+    <th>Status</th>
+    <th>Profit/Loss</th>
+  </tr>
+
+  {% for k in e.odds %}
+  <tr>
+    <td>{{k.id}}</td>
+    <td>{{k.type_id}}</td>
+    <td>{{k.price}}</td>
+    <td>{{k.amount}}</td>
+    <td>{{k.status}}</td>
+    <td>{{k.profit}}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+</table>
+{% endfor %}
+</form>
+
+{% endblock %}

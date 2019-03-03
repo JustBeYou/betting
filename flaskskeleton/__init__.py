@@ -17,7 +17,8 @@ from werkzeug.security import gen_salt
 
 from flaskskeleton.api import api
 from flaskskeleton.middleware import LoggingMiddleware
-from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker
+from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster
+from sqlalchemy import desc, asc
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -98,11 +99,20 @@ from oddfeedsApi import *
 
 @app.route('/')
 def index():
-    return render_template('index.html', matches=Match.query.filter(Match.odds.any()).all())
+    return render_template('index.html', matches=Match.query.filter(Match.odds.any()).order_by(asc(Match.time)).all(),
+                            bookmakers=Bookmaker.query.all())
 
 @app.route('/match/<id>')
 def match(id):
     return render_template('match.html', odds=Odd.query.filter_by(match_id=int(id)).all())
+
+@app.route('/jobs')
+def jobs():
+    return render_template('jobs.html', jobs=Job.query.all())
+
+@app.route('/job/<id>')
+def job(id):
+    return render_template('job.html', clusters=Cluster.query.filter_by(job_id=int(id)).all())
 
 @app.route('/bye')
 def bye():
