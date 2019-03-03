@@ -7,10 +7,13 @@ should be used only when a custom, non-CRUD, API is necessary.
 
 from flask import Blueprint, request, redirect
 from oddfeedsApi import *
-from model import db, Match, Odd, Bookmaker, Job, Cluster
+from model import db, Match, Odd, Bookmaker, Job, Cluster, History
 import bot
 from json import loads
 from pprint import pprint
+from time import time, sleep
+from datetime import datetime, timedelta
+from threading import Thread
 
 api = Blueprint('api', __name__, template_folder='templates')
 
@@ -29,6 +32,68 @@ def bet_helper(odd_id, amount):
         return "insufficient funds"
 
     return "Betting on {} with {}$".format(odd_id, amount)
+
+import random
+
+def random_outcome():
+    foo = [False, True]
+    secure_random = random.SystemRandom()
+    return secure_random.choice(foo)
+last_time = datetime.now()
+
+def background_job():
+    global last_time
+    sleep(5)
+    while True:
+        jobs = Job.query.all()
+        for job in jobs:
+            for cluster in job.clusters:
+                if len(cluster.odds):
+                    first = cluster.odds[0]
+                    if first.amount == 0:
+                        first.amount = cluster.initial_bet + cluster.loss * first.price
+                        try:
+                            pass
+                            #print (bet_helper(first.id, first.amount))
+                        except:
+                            db.session.delete(first)
+                    elif datetime.now()-last_time > timedelta(seconds=3):
+                        win = random_outcome()
+                        last_time = datetime.now()
+
+                        if win:
+                            first.loss = 0
+                            h = History(first.match.home, first.match.away, first.match.time,
+                                        first.type_id, first.price, first.amount, "Win", first.price * first.amount)
+                            db.session.add(h)
+                            db.session.delete(first)
+                        else:
+                            cluster.loss += first.amount
+                            h = History(first.match.home, first.match.away, first.match.time,
+                                        first.type_id, first.price, first.amount, "Lost", -first.amount)
+                            db.session.add(h)
+                            db.session.delete(first)
+
+                    # match ends
+                    #elif (first.match.time + timedelta(minutes=95)) > datetime.now():
+                        # get outcome
+                        pass
+
+                if (len(cluster.odds) == 0):
+                    db.session.delete(cluster)
+
+            db.session.commit()
+            if len(job.clusters) == 0:
+                db.session.delete(job)
+
+        db.session.commit()
+        print ("Baaaaaaaaaaaaaaaaaaaaaackground")
+        sleep(10)
+
+th = Thread(target=background_job)
+th.daemon = True
+th.start()
+
 @api.route('/bet', methods=['POST'])
 def bet():
     odd_id = request.form['oddId']
@@ -46,8 +111,6 @@ def init():
 
     return redirect('/api/update', code=302)
 
-from time import time
-from datetime import datetime
 
 @api.route('/update')
 def update():
@@ -125,21 +188,24 @@ def strategy1():
     db.session.commit()
 
     for data in clusters:
-        cluster = Cluster(job.id)
+        cluster = Cluster(job.id, 1)
         db.session.add(cluster)
         db.session.commit()
 
         for m_id in data:
-            print (m_id)
-            odds = Odd.query.filter((Odd.match_id == m_id) & ((Odd.type_id == ODD_TYPES["1"]) | (Odd.type_id == ODD_TYPES["2"])) & (Odd.period_id == 1)).all()
+            try:
+                print (m_id)
+                odds = Odd.query.filter((Odd.match_id == m_id) & ((Odd.type_id == ODD_TYPES["1"]) | (Odd.type_id == ODD_TYPES["2"])) & (Odd.period_id == 1)).all()
 
-            # betting on favourite
-            if odds[0].price < odds[1].price:
-                print ("FAVOURITE BET IS: {}".format(odds[0].type_id))
-                odds[0].cluster_id = cluster.id
-            else:
-                odds[1].cluster_id = cluster.id
-                print ("FAVOURITE BET IS: {}".format(odds[1].type_id))
+                # betting on favourite
+                if odds[0].price < odds[1].price:
+                    print ("FAVOURITE BET IS: {}".format(odds[0].type_id))
+                    odds[0].cluster_id = cluster.id
+                else:
+                    odds[1].cluster_id = cluster.id
+                    print ("FAVOURITE BET IS: {}".format(odds[1].type_id))
+            except:
+                pass
     db.session.commit()
 
     return redirect('/jobs', code=302)

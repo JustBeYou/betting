@@ -20,8 +20,6 @@ setTimeout(function() {
     <th>Bet type</th>
     <th>Price</th>
     <th>Bet amount</th>
-    <th>Status</th>
-    <th>Profit/Loss</th>
   </tr>
 
   {% for k in e.odds %}
@@ -30,8 +28,6 @@ setTimeout(function() {
     <td>{{k.type_id}}</td>
     <td>{{k.price}}</td>
     <td>{{k.amount}}</td>
-    <td>{{k.status}}</td>
-    <td>{{k.profit}}</td>
   </tr>
   {% endfor %}
 </tbody>

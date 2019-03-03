@@ -39,8 +39,6 @@ class Odd(db.Model):
     # only used when it is used by a job
     cluster_id = db.Column(db.Integer(), db.ForeignKey('cluster.id'), nullable=True)
     amount = db.Column(db.Float())
-    profit = db.Column(db.Float())
-    status = db.Column(db.String(255))
     def __init__(self, id, match_id, bookmaker_id, type_id, price, when, period_id, nav):
         self.id = id
         self.match_id = match_id
@@ -51,16 +49,18 @@ class Odd(db.Model):
         self.period_id = period_id
         self.nav = nav
         self.amount = 0.0
-        self.profit = 0.0
-        self.status = 'unknown'
 
 class Cluster(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     odds = db.relationship('Odd', backref='cluster', lazy=True)
     job_id = db.Column(db.Integer(), db.ForeignKey('job.id'), nullable=False)
+    loss = db.Column(db.Float())
+    initial_bet = db.Column(db.Float())
 
-    def __init__(self, job_id):
+    def __init__(self, job_id, initial_bet):
         self.job_id = job_id
+        self.initial_bet = initial_bet
+        self.loss = 0
 
 class Job(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
@@ -68,6 +68,27 @@ class Job(db.Model):
 
     def __init__(self):
         pass
+
+class History(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    home = db.Column(db.String(255))
+    away = db.Column(db.String(255))
+    time = db.Column(db.DateTime())
+    type_id = db.Column(db.Integer())
+    price = db.Column(db.Float())
+    amount = db.Column(db.Float())
+    outcome = db.Column(db.String(255))
+    profit = db.Column(db.Float())
+
+    def __init__(self, home, away, time, type_id, price, amount, outcome, profit):
+        self.home = home
+        self.away = away
+        self.time = time
+        self.type_id = type_id
+        self.price = price
+        self.amount = amount
+        self.outcome = outcome
+        self.profit = profit
 
 def make_conn_str():
     """Make an local database file on disk."""

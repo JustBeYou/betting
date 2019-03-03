@@ -17,7 +17,7 @@ from werkzeug.security import gen_salt
 
 from flaskskeleton.api import api
 from flaskskeleton.middleware import LoggingMiddleware
-from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster
+from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
 from sqlalchemy import desc, asc
 
 
@@ -108,7 +108,7 @@ def match(id):
 
 @app.route('/jobs')
 def jobs():
-    return render_template('jobs.html', jobs=Job.query.all())
+    return render_template('jobs.html', jobs=Job.query.all(), history=History.query.order_by(desc(History.id)).all())
 
 @app.route('/job/<id>')
 def job(id):

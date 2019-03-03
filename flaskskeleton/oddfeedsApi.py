@@ -22,7 +22,7 @@ def getTournaments():
     try:
         resp = s.post(url, json={
                 "prematch": True,
-                "inplay": True
+                "inplay": False
             })
         return resp.json()
     except:
@@ -41,7 +41,8 @@ def getLeagues(tournaments):
         try:
             resp = s.post(url, json={
                 "scope": "leagues",
-                "tournament_ids":e
+                "tournament_ids":e,
+                "inplay":False
                 })
             leagues.append(resp.json())
         except:
@@ -62,7 +63,8 @@ def getMatches(leagues):
         try:
             resp = s.post(url, json={
                 "scope":"matches",
-                "league_ids":e
+                "league_ids":e,
+                "inplay":False
                 })
             matches.append(resp.json())
         except:
@@ -89,7 +91,8 @@ def worker_getOdds(config):
                 "match_ids":e,
                 "bookmaker_ids":bookmakers,
                 "odd_type_ids":types,
-                "odd_period_ids":[1, 0, 6]
+                "odd_period_ids":[1, 0, 6],
+                "inplay":False
                 })
 
             r = resp.json()

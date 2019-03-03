@@ -64,7 +64,13 @@ class Pinnacle(object):
         time.sleep(0.5)
         driver.find_element(By.XPATH, '//span[@class="RefreshCountDown Live"]').click()
         time.sleep(0.5)
+
+        scrolls = 0
         while True:
+            scrolls +=1
+            print ("Scroll {} {}".format(scrolls, nav))
+            if scrolls == 80:
+                raise Exception("Match not found")
             try:
                 el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(urldecode(nav['nav'])))
                 print ("Bet on: {}".format(el))
@@ -76,6 +82,7 @@ class Pinnacle(object):
         time.sleep(0.5)
         confirm()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').click()
+        driver.find_element(By.XPATH, '//input[@class="stakeInput"]').clear()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').send_keys(str(amount))
         driver.find_element(By.XPATH, '//a[@id="BetTicketSubmitLink"]').click()
         confirm()
