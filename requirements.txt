@@ -23,3 +23,5 @@ six==1.11.0
 SQLAlchemy==1.2.4
 Werkzeug==0.14.1
 WTForms==2.1
+Selenium==3.141.0
+lxml==4.3.2
