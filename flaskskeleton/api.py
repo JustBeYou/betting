@@ -62,7 +62,7 @@ def background_job():
                         last_time = datetime.now()
 
                         if win:
-                            first.loss = 0
+                            cluster.loss = 0
                             h = History(first.match.home, first.match.away, first.match.time,
                                         first.type_id, first.price, first.amount, "Win", first.price * first.amount)
                             db.session.add(h)
