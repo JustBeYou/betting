@@ -99,7 +99,7 @@ from oddfeedsApi import *
 
 @app.route('/')
 def index():
-    return render_template('index.html', matches=Match.query.filter(Match.odds.any()).order_by(asc(Match.time)).all(),
+    return render_template('index.html', matches=Match.query.order_by(asc(Match.time)).all(),
                             bookmakers=Bookmaker.query.all())
 
 @app.route('/match/<id>')

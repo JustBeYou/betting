@@ -129,7 +129,7 @@ def parallel_getOdds(cnt, ids, bookmakers, types):
 
     return odds
 
-def getData(bookmakers, types):
+def getData(bookmakers, types, get_odds=False):
     tournaments = getTournaments()
     leagues = getLeagues(tournaments)
     matches = getMatches(leagues)
@@ -141,5 +141,7 @@ def getData(bookmakers, types):
             __matches.append(e)
             ids.append(e['id'])
 
-    return {'matches':__matches, 'odds':parallel_getOdds(1, ids, bookmakers, types)}
+    if get_odds:
+        return {'matches':__matches, 'odds':parallel_getOdds(1, ids, bookmakers, types)}
+    return {'matches':__matches, 'odds':{'prematch':[],'inplay':[]}}
 

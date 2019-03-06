@@ -14,6 +14,7 @@ from pprint import pprint
 from time import time, sleep
 from datetime import datetime, timedelta
 from threading import Thread
+import sqlite3
 
 api = Blueprint('api', __name__, template_folder='templates')
 
@@ -23,8 +24,10 @@ def status():
 
 def bet_helper(odd_id, amount):
     odd_obj = Odd.query.filter_by(id=odd_id).first()
+    print (odd_obj.__dict__)
     bookmaker = odd_obj.bookmaker.name
     nav = loads(odd_obj.nav)
+    nav["type_id"] = odd_obj.type_id
     pprint (nav)
 
     bot.login(bookmaker)
@@ -45,50 +48,53 @@ def background_job():
     global last_time
     sleep(5)
     while True:
-        jobs = Job.query.all()
-        for job in jobs:
-            for cluster in job.clusters:
-                if len(cluster.odds):
-                    first = cluster.odds[0]
-                    if first.amount == 0:
-                        first.amount = cluster.initial_bet + cluster.loss * first.price
-                        try:
+        try:
+            jobs = Job.query.all()
+            for job in jobs:
+                for cluster in job.clusters:
+                    if len(cluster.odds):
+                        first = cluster.odds[0]
+                        if first.amount == 0:
+                            first.amount = cluster.initial_bet + cluster.loss * first.price
+                            try:
+                                pass
+                                #print (bet_helper(first.id, first.amount))
+                            except:
+                                db.session.delete(first)
+                        elif datetime.now()-last_time > timedelta(seconds=3):
+                            win = random_outcome()
+                            last_time = datetime.now()
+
+                            if win:
+                                cluster.loss = 0
+                                h = History(first.match.home, first.match.away, first.match.time,
+                                            first.type_id, first.price, first.amount, "Win", first.price * first.amount)
+                                db.session.add(h)
+                                db.session.delete(first)
+                            else:
+                                cluster.loss += first.amount
+                                h = History(first.match.home, first.match.away, first.match.time,
+                                            first.type_id, first.price, first.amount, "Lost", -first.amount)
+                                db.session.add(h)
+                                db.session.delete(first)
+
+                        # match ends
+                        #elif (first.match.time + timedelta(minutes=95)) > datetime.now():
+                            # get outcome
                             pass
-                            #print (bet_helper(first.id, first.amount))
-                        except:
-                            db.session.delete(first)
-                    elif datetime.now()-last_time > timedelta(seconds=3):
-                        win = random_outcome()
-                        last_time = datetime.now()
 
-                        if win:
-                            cluster.loss = 0
-                            h = History(first.match.home, first.match.away, first.match.time,
-                                        first.type_id, first.price, first.amount, "Win", first.price * first.amount)
-                            db.session.add(h)
-                            db.session.delete(first)
-                        else:
-                            cluster.loss += first.amount
-                            h = History(first.match.home, first.match.away, first.match.time,
-                                        first.type_id, first.price, first.amount, "Lost", -first.amount)
-                            db.session.add(h)
-                            db.session.delete(first)
+                    if (len(cluster.odds) == 0):
+                        db.session.delete(cluster)
 
-                    # match ends
-                    #elif (first.match.time + timedelta(minutes=95)) > datetime.now():
-                        # get outcome
-                        pass
-
-                if (len(cluster.odds) == 0):
-                    db.session.delete(cluster)
+                db.session.commit()
+                if len(job.clusters) == 0:
+                    db.session.delete(job)
 
             db.session.commit()
-            if len(job.clusters) == 0:
-                db.session.delete(job)
-
-        db.session.commit()
-        print ("Baaaaaaaaaaaaaaaaaaaaaackground")
-        sleep(10)
+            print ("Baaaaaaaaaaaaaaaaaaaaaackground")
+            sleep(10)
+        except sqlite3.OperationalError as e:
+            sleep(30)
 
 th = Thread(target=background_job)
 th.daemon = True
@@ -98,7 +104,7 @@ th.start()
 def bet():
     odd_id = request.form['oddId']
     amount = request.form['amount']
-    return bet_helper(odd_it, amount)
+    return bet_helper(odd_id, amount)
 
 @api.route('/init')
 def init():
@@ -117,8 +123,8 @@ def update():
     start_t = time()
 
     bks = [
-    BOOKMAKERS["Pinnacle"]
-    #BOOKMAKERS["1xBet"]
+    BOOKMAKERS["Pinnacle"],
+    BOOKMAKERS["1xBet"]
     ]
     tps = [
         ODD_TYPES["1"],

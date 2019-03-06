@@ -126,6 +126,30 @@ class OneXBet(object):
         el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(eventId))
         driver.execute_script("arguments[0].click()", el)
 
+        type_id = nav["type_id"]
+        # 2 - "1"
+        # 3 - "X"
+        # 4 - "2"
+        betting_map = {
+            2: 1,
+            3: 2,
+            4: 3
+        }
+        to_click = betting_map[type_id]
+
+        time.sleep(0.25)
+        el = driver.find_element_by_xpath("//span[@class=\"bet_type\" and @data-type=\"{}\"]".format(to_click))
+        driver.execute_script("arguments[0].click()", el)
+
+        time.sleep(0.25)
+        el = driver.find_element_by_xpath("//input[@class=\"c-spinner__input bet_sum_input\"]")
+        el.click()
+        el.clear()
+        el.send_keys(str(amount))
+
+        el = driver.find_element_by_xpath("//button[contains(text(), \"place a bet\")]")
+        el.click()
+
         return False
 # ---------------------------------------------------------------------------------------------------
 
@@ -207,3 +231,7 @@ def bet(bookmaker, nav, amount):
     elif bookmaker == "1xBet":
         return OneXBet.bet(nav, amount)
     return False
+
+
+#login("1xBet")
+#bet("1xBet", {"leagueId":108319,"eventId":41691625,"type_id":2}, 100)
