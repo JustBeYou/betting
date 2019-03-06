@@ -1,16 +1,16 @@
-{% extends "bootstrap/base.html" %}
+<head>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="/static/css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
 
-{% block head %}
-{{ super() }}
-<!-- Put custom CSS/JS here -->
-{% endblock %}
-
-{% block body %}
-<!-- Build a custom look here that all pages can inherit. -->
-<div class="row">
-  <div class="col-md-6 col-md-offset-3">
-    {% block content %}
-    {% endblock %}
-  </div>
-</div>
-{% endblock %}
+<body style="margin-top:15px; margin-left:15px">
+    <a href="/"><img style="width:600px;height:180px" src="/static/img/Logo.png"></img></a>
+    
+    <div style="text-align:center;">
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+    <script type="text/javascript" src="/static/js/materialize.min.js"></script>
+</body>
