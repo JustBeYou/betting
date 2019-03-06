@@ -11,13 +11,10 @@ from flaskskeleton import app, init_webapp
 from flaskskeleton.model import db
 from flaskskeleton.worker import BackgroundWorker
 
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-
 manager = Manager(app)
-
 
 @manager.command
 def start_background_worker():
@@ -32,13 +29,11 @@ def start_background_worker():
             log.info('Shutting down worker thread!')
             worker.stop()
 
-
 @manager.command
 def prime_database():
     """Prime database with some fake data."""
     init_webapp()
     db.session.commit()
-
 
 @manager.command
 def runserver(*args, **kwargs):

@@ -1,36 +1,35 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>
-Matches list
-</h1>
-
+<h1>Matches list</h1>
 <table class="table">
-<tr>
-  <th>ID</th>
-  <th>Start time</th>
-  <th>Home</th>
-  <th>Away</th>
-</tr>
-<a class="btn btn-primary" href="/api/update" role="button">Update</a>
-<a class="btn btn-primary" href="/jobs" role="button">Jobs</a>
-
-<form method="POST" action="/api/strategy1">
-<button class="btn btn-primary" type="submit">Strategy 1</button>
-{% for e in bookmakers %}
-<input type="radio" name="bookmaker" value="{{e.id}}"/>{{e.name}}
-{% endfor %}
-<tbody>
-{% for e in matches %}
-  <tr>
-    <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
-    <td>{{ e.time }}</td>
-    <td>{{ e.home }}</td>
-    <td>{{ e.away }}</td>
-  </tr>
-{% endfor %}
-</tbody>
+    <tr>
+        <th>ID</th>
+        <th>Start time</th>
+        <th>Home</th>
+        <th>Away</th>
+    </tr>
+    
+    <a class="btn btn-primary" href="/api/update" role="button">Update</a>&nbsp;
+    <a class="btn btn-primary" href="/jobs" role="button">Jobs</a>&nbsp;
+    
+    <form method="POST" action="/api/strategy1">
+        <button class="btn btn-primary" type="submit">Strategy 1</button>&nbsp;
+        
+        {% for e in bookmakers %}
+            <input type="radio" name="bookmaker" value="{{e.id}}"/>{{e.name}}
+        {% endfor %}
+    </form>
+    
+    <tbody>
+        {% for e in matches %}
+        <tr>
+            <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
+            <td>{{ e.time }}</td>
+            <td>{{ e.home }}</td>
+            <td>{{ e.away }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-</form>
-
 {% endblock %}

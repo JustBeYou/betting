@@ -19,15 +19,13 @@ from flaskskeleton.api import api
 from flaskskeleton.middleware import LoggingMiddleware
 from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
 from sqlalchemy import desc, asc
-
+from oddfeedsApi import *
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-
 # Initialize Flask and register a blueprint
 app = Flask(__name__)
-
 
 def restless_api_auth_func(*args, **kw):
     """A request processor that ensures requests are authenticated.
@@ -63,8 +61,9 @@ def init_webapp():
 
     # Initialize Flask configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = make_conn_str()
-    app.config['SECRET_KEY'] = 'abc123'
-    app.config['WTF_CSRF_ENABLED'] = False
+    app.config['SECRET_KEY'] = 'S0m37h1ng_S0m37h1ng_S3kr1t_K3y____!@#$'
+    app.config['WTF_CSRF_ENABLED'] = True
+    app.config['WTF_CSRF_SECRET_KEY'] = 'S0m37h1ng_S0m37h1ng_S3kr1t_CSRF_K3y____!@#$'
     app.config['SECURITY_TOKEN_MAX_AGE'] = 60
     app.config['SECURITY_TOKEN_AUTHENTICATION_HEADER'] = 'Auth-Token'
     # app.config['SECURITY_POST_LOGIN_VIEW'] = 'http://127.0.0.1:4200'
@@ -94,8 +93,6 @@ def init_webapp():
     )
     #manager.create_api(Employee, methods=['GET', 'POST', 'OPTIONS'])
     return app
-
-from oddfeedsApi import *
 
 @app.route('/')
 def index():
