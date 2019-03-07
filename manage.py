@@ -7,9 +7,9 @@ from validate import Validator
 from flask.ext.script import Manager
 import logging
 
-from flaskskeleton import app, init_webapp
-from flaskskeleton.model import db
-from flaskskeleton.worker import BackgroundWorker
+from BetManager import app, init_webapp
+from BetManager.model import db
+from BetManager.worker import BackgroundWorker
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)

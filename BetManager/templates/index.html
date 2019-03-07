@@ -19,17 +19,18 @@
         {% for e in bookmakers %}
             <input type="radio" name="bookmaker" value="{{e.id}}"/>{{e.name}}
         {% endfor %}
+
+        <tbody>
+            {% for e in matches %}
+            <tr>
+                <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
+                <td>{{ e.time }}</td>
+                <td>{{ e.home }}</td>
+                <td>{{ e.away }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
     </form>
-    
-    <tbody>
-        {% for e in matches %}
-        <tr>
-            <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
-            <td>{{ e.time }}</td>
-            <td>{{ e.home }}</td>
-            <td>{{ e.away }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
 </table>
 {% endblock %}

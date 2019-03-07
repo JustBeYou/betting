@@ -15,9 +15,9 @@ from flask.ext.security import (
 )
 from werkzeug.security import gen_salt
 
-from flaskskeleton.api import api
-from flaskskeleton.middleware import LoggingMiddleware
-from flaskskeleton.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
+from BetManager.api import api
+from BetManager.middleware import LoggingMiddleware
+from BetManager.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
 from sqlalchemy import desc, asc
 from oddfeedsApi import *
 

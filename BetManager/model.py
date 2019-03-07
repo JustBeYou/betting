@@ -92,4 +92,4 @@ class History(db.Model):
 
 def make_conn_str():
     """Make an local database file on disk."""
-    return 'sqlite:///flaskskeleton.db'
+    return 'sqlite:///BetManager.db'
