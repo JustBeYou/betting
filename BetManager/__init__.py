@@ -1,10 +1,10 @@
 import logging
 
 from flask import Flask, request, render_template, jsonify
-from flask.ext.bootstrap import Bootstrap
-from flask.ext.cors import CORS
-from flask.ext.restless import APIManager, ProcessingException
-from flask.ext.security import (
+from flask_bootstrap import Bootstrap
+from flask_cors import CORS
+from flask_restless import APIManager, ProcessingException
+from flask_security import (
   RoleMixin,
   SQLAlchemyUserDatastore,
   Security,
@@ -32,7 +32,7 @@ def restless_api_auth_func(*args, **kw):
 
     Flask-Restless endpoints are generated automatically and thus do not have a
     Flask route function that we can decorate with the
-    :func:`flask.ext.security.auth_token_required` decorator. This function
+    :func:`flask_security.auth_token_required` decorator. This function
     mimics the route function and satisfies the Flask-Restless request processor
     contract.
 
