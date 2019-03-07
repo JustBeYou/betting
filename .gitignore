@@ -1,4 +1,4 @@
 *.pyc
 browser.session
 *.db
-my-venv
+myenv

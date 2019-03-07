@@ -15,9 +15,9 @@ from flask_security import (
 )
 from werkzeug.security import gen_salt
 
-from BetManager.api import api
-from BetManager.middleware import LoggingMiddleware
-from BetManager.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
+from BetAPI.api import api
+from BetAPI.middleware import LoggingMiddleware
+from BetAPI.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
 from sqlalchemy import desc, asc
 from oddfeedsApi import *
 
@@ -93,24 +93,3 @@ def init_webapp():
     )
     #manager.create_api(Employee, methods=['GET', 'POST', 'OPTIONS'])
     return app
-
-@app.route('/')
-def index():
-    return render_template('index.html', matches=Match.query.order_by(asc(Match.time)).all(),
-                            bookmakers=Bookmaker.query.all())
-
-@app.route('/match/<id>')
-def match(id):
-    return render_template('match.html', odds=Odd.query.filter_by(match_id=int(id)).all())
-
-@app.route('/jobs')
-def jobs():
-    return render_template('jobs.html', jobs=Job.query.all(), history=History.query.order_by(desc(History.id)).all())
-
-@app.route('/job/<id>')
-def job(id):
-    return render_template('job.html', clusters=Cluster.query.filter_by(job_id=int(id)).all())
-
-@app.route('/bye')
-def bye():
-    raise RuntimeError("Bye")
