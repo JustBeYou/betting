@@ -17,7 +17,7 @@ from werkzeug.security import gen_salt
 
 from BetAPI.api import api
 from BetAPI.middleware import LoggingMiddleware
-from BetAPI.model import make_conn_str, db, Match, Odd, Bookmaker, Job, Cluster, History
+from BetAPI.model import make_conn_str, db
 from sqlalchemy import desc, asc
 from oddfeedsApi import *
 

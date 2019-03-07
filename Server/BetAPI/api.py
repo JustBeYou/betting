@@ -7,8 +7,7 @@ should be used only when a custom, non-CRUD, API is necessary.
 
 from flask import Blueprint, request, redirect
 from oddfeedsApi import *
-from model import db, Match, Odd, Bookmaker, Job, Cluster, History
-import bot
+from model import db
 from json import loads
 from pprint import pprint
 from time import time, sleep
