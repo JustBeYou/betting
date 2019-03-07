@@ -1,6 +1,0 @@
-Flask
-configobj
-Flask-Bootstrap
-Flask-Script
-Flask-SQLAlchemy
-Flask-Restless
