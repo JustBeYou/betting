@@ -18,6 +18,13 @@ from BetAPI.config import TARGET_BOOKMAKERS, TARGET_ODDS
 
 api = Blueprint('api', __name__, template_folder='templates')
 
+@api.route('/surebets')
+def surebets():
+    cache = Cache.get_store()
+    if "surebets" in cache.keys():
+        return jsonify(surebets=cache["surebets"])
+    return jsonify({})
+
 @api.route('/matches')
 def matches():
     return jsonify(matches=[i.json for i in Match.query.all()])
