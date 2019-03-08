@@ -22,7 +22,7 @@ def getTournaments():
     try:
         resp = s.post(url, json={
                 "prematch": True,
-                "inplay": False
+                "inplay": True
             })
         return resp.json()
     except:
@@ -42,7 +42,7 @@ def getLeagues(tournaments):
             resp = s.post(url, json={
                 "scope": "leagues",
                 "tournament_ids":e,
-                "inplay":False
+                "inplay":True
                 })
             leagues.append(resp.json())
         except:
@@ -64,7 +64,7 @@ def getMatches(leagues):
             resp = s.post(url, json={
                 "scope":"matches",
                 "league_ids":e,
-                "inplay":False
+                "inplay":True
                 })
             matches.append(resp.json())
         except:
@@ -92,7 +92,7 @@ def worker_getOdds(config):
                 "bookmaker_ids":bookmakers,
                 "odd_type_ids":types,
                 "odd_period_ids":[1, 0, 6],
-                "inplay":False
+                "inplay":True
                 })
 
             r = resp.json()
@@ -129,6 +129,30 @@ def parallel_getOdds(cnt, ids, bookmakers, types):
 
     return odds
 
+def getOdds(cnt, ids, bookmakers, types):
+    #k = int(len(ids) / cnt)
+    #ids = [ids[i:i+k] for i in range(0, len(ids), k)]
+
+    config = {
+        "worker": cnt,
+        "ids": ids,
+        "bookmakers":bookmakers,
+        "types":types
+    }
+
+    r = worker_getOdds(config)
+
+    odds = {
+        "prematch": [],
+        "inplay": []
+    }
+    for ll in r:
+        odds["prematch"] += ll['data']['prematch']
+        odds["inplay"]   += ll['data']['inplay']
+
+    return odds
+
+
 def getData(bookmakers, types, get_odds=False):
     tournaments = getTournaments()
     leagues = getLeagues(tournaments)
@@ -142,6 +166,11 @@ def getData(bookmakers, types, get_odds=False):
             ids.append(e['id'])
 
     if get_odds:
-        return {'matches':__matches, 'odds':parallel_getOdds(1, ids, bookmakers, types)}
+        return {'matches':__matches, 'odds':getOdds(1, ids, bookmakers, types)}
     return {'matches':__matches, 'odds':{'prematch':[],'inplay':[]}}
 
+
+def getOddsForMatch(id, bookmakers, types):
+    return {'odds':getOdds(1, [id], bookmakers, types)}
+def getOddsForMatches(ids,bookmakers,types):
+    return {'odds':getOdds(1, ids, bookmakers, types)}

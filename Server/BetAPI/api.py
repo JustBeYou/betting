@@ -12,6 +12,8 @@ from time import time, sleep
 from datetime import datetime, timedelta
 from threading import Thread
 from BetAPI.model import db, Match
+from BetAPI.cache import Cache
+from BetAPI.oddfeedsApi import getOddsForMatch, BOOKMAKERS, ODD_TYPES
 
 api = Blueprint('api', __name__, template_folder='templates')
 
@@ -19,6 +21,22 @@ api = Blueprint('api', __name__, template_folder='templates')
 def matches():
     return jsonify(matches=[i.json for i in Match.query.all()])
 
-@api.route('/odds/<id>')
+@api.route('/matches/<id>')
 def odds(id):
-    return None
+    cache = Cache.get_store()
+    if id not in cache.keys():
+        data = getOddsForMatch(
+          id,
+          [BOOKMAKERS["1xBet"], BOOKMAKERS["Pinnacle"]],
+          [ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]]
+        )
+
+        to_add = []
+        for odd in data["odds"]["prematch"]:
+            to_add.append(odd)
+        for odd in data["odds"]["inplay"]:
+            to_add.append(odd)
+        cache[id] = to_add
+
+
+    return jsonify(odds=[i for i in cache[id]])

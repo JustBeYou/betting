@@ -23,7 +23,10 @@ from threading import Thread
 from multiprocessing import Process
 from time import sleep
 from BetAPI.oddfeedsApi import *
+from BetAPI.BetFinder import surebet_thread
 from datetime import datetime, timedelta
+from BetAPI.cache import Cache
+from BetAPI.config import *
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -81,14 +84,14 @@ def updater_thread(db):
 
             session.commit()
 
-        now = datetime.utcnow()
-        outdated = session.query(Match).with_for_update().filter((Match.time + timedelta(minutes=100)) < now).all()
+        now = datetime.utcnow() - timedelta(minutes=MATCH_LIFETIME)
+        outdated = session.query(Match).with_for_update().filter(Match.time < now).all()
         for m in outdated:
             session.delete(m)
         session.commit()
 
         print ("[*] Update done...")
-        sleep(60 * 60)
+        sleep(60 * MATCH_LIST_UPDATE_INTERVAL)
 
 def init_webapp():
     """Initialize the web application."""
@@ -104,6 +107,7 @@ def init_webapp():
 
     # Initialize Flask configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = make_conn_str()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     #app.config['SQLALCHEMY_POOL_SIZE'] = 5
     #app.config['SQLALCHEMY_POOL_RECYCLE'] = 3600
 
@@ -142,9 +146,13 @@ def init_webapp():
 
     # Init other workers
     #t = Thread(target=updater_thread, args=(db,))
-    t = Process(target=updater_thread, args=(db,))
-    t.daemon = True
-    t.start()
+    t1 = Process(target=updater_thread, args=(db,))
+    t1.daemon = True
+    t1.start()
+
+    t2 = Process(target=surebet_thread, args=(db, Cache.get_store()))
+    t2.daemon = True
+    t2.start()
 
     return app
 
