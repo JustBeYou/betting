@@ -58,10 +58,7 @@ def updater_thread(db):
     while True:
         print ("[*] Starting update...")
         data = getData(
-                [
-                    BOOKMAKERS["1xBet"],
-                    BOOKMAKERS["Pinnacle"]
-                    ],
+                TARGET_BOOKMAKERS,
                 []
                 )
         for match in data['matches']:

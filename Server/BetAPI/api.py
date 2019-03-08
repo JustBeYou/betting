@@ -14,6 +14,7 @@ from threading import Thread
 from BetAPI.model import db, Match
 from BetAPI.cache import Cache
 from BetAPI.oddfeedsApi import getOddsForMatch, BOOKMAKERS, ODD_TYPES
+from BetAPI.config import TARGET_BOOKMAKERS, TARGET_ODDS
 
 api = Blueprint('api', __name__, template_folder='templates')
 
@@ -27,8 +28,8 @@ def odds(id):
     if id not in cache.keys():
         data = getOddsForMatch(
           id,
-          [BOOKMAKERS["1xBet"], BOOKMAKERS["Pinnacle"]],
-          [ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]]
+          TARGET_BOOKMAKERS,
+          TARGET_ODDS
         )
 
         to_add = []

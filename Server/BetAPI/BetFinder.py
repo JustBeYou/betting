@@ -83,7 +83,7 @@ def surebet_thread(db, cache):
         to_update = [to_update[i:i+25] for i in range(0, len(to_update), 25)]
         to_change = {}
         for ids in to_update:
-            data = getOddsForMatches(ids, [BOOKMAKERS["1xBet"], BOOKMAKERS["Pinnacle"]], [ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]])
+            data = getOddsForMatches(ids, TARGET_BOOKMAKERS, TARGET_ODDS)
             for odd in data["odds"]["prematch"]:
                 if odd["match_id"] in to_change.keys():
                     to_change[odd["match_id"]].append(odd)
@@ -102,12 +102,12 @@ def surebet_thread(db, cache):
             obj = {
                 "odds": cache[m]
             }
-            types= [[ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]]]
-            b = BetFinder(obj, types)
+
+            b = BetFinder(obj, TARGET_BETS)
             sol = b.getBestBet()
             if sol != {}:
                 for k in sol.keys():
-                    print ("{}-{}: Price={} Bookmaker={}".format(sol[k]['match_id'], k, sol[k]['price'], sol[k]['bookmaker']['name']))
+                    print ("{}-{}: Price={} Bookmaker={} HC={}".format(sol[k]['match_id'], k, sol[k]['price'], sol[k]['bookmaker']['name'], sol[k]['hc']))
                 print ("------------------------------------")
 
         sleep(LIVE_UPDATE_INTERVAL)

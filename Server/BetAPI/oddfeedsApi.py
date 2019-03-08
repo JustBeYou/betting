@@ -9,7 +9,9 @@ url = "http://www.oddstorm.com/feeds_api/"
 ODD_TYPES = {
     "1": 2,
     "X": 3,
-    "2": 4
+    "2": 4,
+    "Over": 8,
+    "Under": 9
 }
 
 BOOKMAKERS = {
