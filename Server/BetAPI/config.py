@@ -1,8 +1,8 @@
-AHEAD_INTERVAL = 120 # minutes
-PREMATCH_UPDATE_INTERVAL = 30 # minutes
+AHEAD_INTERVAL = 100 * 120 # minutes
+PREMATCH_UPDATE_INTERVAL = 5 # minutes
 LIVE_UPDATE_INTERVAL = 60 # seconds
 MATCH_LIFETIME = 100 # minutes
-MATCH_LIST_UPDATE_INTERVAL = 60 # minutes
+MATCH_LIST_UPDATE_INTERVAL = 5 # minutes
 
 from BetAPI.oddfeedsApi import BOOKMAKERS, ODD_TYPES
 TARGET_BOOKMAKERS = [
@@ -14,10 +14,14 @@ TARGET_ODDS = [
     ODD_TYPES["1"],
     ODD_TYPES["X"],
     ODD_TYPES["2"],
-    ODD_TYPES["Over"],
-    ODD_TYPES["Under"]
+    ODD_TYPES["1X"],
+    ODD_TYPES["X2"]
+    #ODD_TYPES["Over"],
+    #ODD_TYPES["Under"]
 ]
 TARGET_BETS = [
-    [ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]]
+    #[ODD_TYPES["1"], ODD_TYPES["X"], ODD_TYPES["2"]],
+    [ODD_TYPES["1X"], ODD_TYPES["2"]]
+    #[ODD_TYPES["1"], ODD_TYPES["X2"]]
     #[ODD_TYPES["Over"], ODD_TYPES["Under"]]
 ]

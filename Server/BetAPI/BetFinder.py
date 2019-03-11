@@ -100,17 +100,23 @@ def surebet_thread(db, cache):
 
         surebets = []
         for m in cache.keys():
+            if m == "surebets": continue
             obj = {
+                "id": m,
                 "odds": cache[m]
             }
 
             b = BetFinder(obj, TARGET_BETS)
             sol = b.getBestBet()
+            b.printBestBet()
             if sol != {}:
-                surebets.append(sol)
                 for k in sol.keys():
                     print ("{}-{}: Price={} Bookmaker={} HC={}".format(sol[k]['match_id'], k, sol[k]['price'], sol[k]['bookmaker']['name'], sol[k]['hc']))
                 print ("------------------------------------")
+                sol[-1] = session.query(Match).filter(Match.id == m).first().json
+                surebets.append(sol)
+ 
+
 
         cache["surebets"] = surebets
         sleep(LIVE_UPDATE_INTERVAL)
