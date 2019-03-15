@@ -8,29 +8,28 @@
         <th>Start time</th>
         <th>Home</th>
         <th>Away</th>
+        <th>Status</th>
     </tr>
-    
-    <a class="btn btn-primary" href="/api/update" role="button">Update</a>&nbsp;
-    <a class="btn btn-primary" href="/jobs" role="button">Jobs</a>&nbsp;
-    
-    <form method="POST" action="/api/strategy1">
-        <button class="btn btn-primary" type="submit">Strategy 1</button>&nbsp;
-        
-        {% for e in bookmakers %}
-            <input type="radio" name="bookmaker" value="{{e.id}}"/>{{e.name}}
+    <tbody>
+        {% for e in matches %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td>{{ e.time }} GMT</td>
+            <td>{{ e.home }}</td>
+            <td>{{ e.away }}</td>
+            {% if e.live %}
+            <td><span class="red-text text-darken-2">Live</span></td>
+            {% else %}
+            <td>No live bets</td>
+            {% endif %}
+        </tr>
         {% endfor %}
-
-        <tbody>
-            {% for e in matches %}
-            <tr>
-                <td><input type="checkbox" name="matchesIds" value="{{e.id}}"/><a href="/match/{{e.id}}">{{ e.id }}</a></td>
-                <td>{{ e.time }}</td>
-                <td>{{ e.home }}</td>
-                <td>{{ e.away }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-
-    </form>
+    </tbody>
 </table>
+
+<script>
+  setTimeout(function() {
+    location.reload();
+  }, 360 * 1000);
+</script>
 {% endblock %}

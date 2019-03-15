@@ -1,20 +1,21 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from lxml.html import fromstring
-import urllib2
+import urllib.parse
 import time
 import pickle
 
-def urlencode(s):
-    return urllib2.quote(s)
+from BetManager.mainApi import ODD_TYPES
+
+def str_float(x):
+    return "{:.2f}".format(x)
 
 def urldecode(s):
-    return urllib2.unquote(s).decode('utf8')
+    return urllib.parse.unquote(s)
 
 driver = None
 browser_state = {}
@@ -25,11 +26,12 @@ def save_state():
     pickle.dump( browser_state, open( "browser.session", "wb" ) )
 
 class SessionRemote(webdriver.Remote):
-    def start_session(self, desired_capabilities, browser_profile=None):
+    """def start_session(self, desired_capabilities, browser_profile=None):
         # Skip the NEW_SESSION command issued by the original driver
         # and set only some required attributes
         self.w3c = True
-
+    """
+    pass
 # ---------------------------------------------------------------------------------------------------------
 class Pinnacle(object):
     logged_in = False
@@ -55,39 +57,52 @@ class Pinnacle(object):
         print ("[+] Done")
     @classmethod
     def bet(cls, nav, amount):
+        print ("bet on pinnacle")
         driver.get('https://members.pinnacle.com/Sportsbook')
+        el = driver.find_element_by_xpath('//a[@href="/Sportsbook/?sport=Soccer"]')
+        driver.execute_script("arguments[0].click()", el)
+        time.sleep(1)
+
+
+        driver.get('https://members.pinnacle.com/Sportsbook/Asia/en-GB/Bet/Soccer/Today/Double/null/0/Regular/SportsBookAll/Decimal/45/#tab=Menu&sport=/Sportsbook/Asia/en-GB/GetLines/Soccer/Today/1/null/0/Regular/SportsBookAll/Decimal/45/false/')
         try:
             el = driver.find_element_by_xpath("//*[contains(text(), \"{}\")]".format(urldecode(nav['tab'])))
-            el.click()
-        except:
+            driver.execute_script("arguments[0].click()", el)
+        except Exception as e:
             pass
-        time.sleep(0.5)
-        driver.find_element(By.XPATH, '//span[@class="RefreshCountDown Live"]').click()
-        time.sleep(0.5)
+        time.sleep(1)
+
+        print ("it will scroll")
 
         scrolls = 0
-        while True:
-            scrolls +=1
-            print ("Scroll {} {}".format(scrolls, nav))
-            if scrolls == 80:
-                raise Exception("Match not found")
+        while scrolls < 80:
             try:
-                el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(urldecode(nav['nav'])))
-                print ("Bet on: {}".format(el))
-                break
+               el = driver.find_element_by_xpath('//a[contains(@href, "Alternate") and contains(@href, \"{}\")]'.format(nav["arbmate"]["eventId"]))
+               el.click()
+               break
             except Exception as e:
                 scroll()
+                print ("Didn't find yet: {}".format(e))
+        scroll()
 
-        el.click()
+        time.sleep(1)
+        el = driver.find_element_by_xpath('//a[contains(@href, \"{}\")]'.format(nav["nav"]))
+        driver.execute_script("arguments[0].click()", el)
         time.sleep(0.5)
         confirm()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').click()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').clear()
-        driver.find_element(By.XPATH, '//input[@class="stakeInput"]').send_keys(str(amount))
+
+        to_type = str_float(amount)
+        for c in to_type:
+            driver.find_element(By.XPATH, '//input[@class="stakeInput"]').send_keys(c)
+            time.sleep(0.2)
+
         driver.find_element(By.XPATH, '//a[@id="BetTicketSubmitLink"]').click()
         confirm()
         time.sleep(0.5)
 
+        time.sleep(3)
         if "insufficient funds" in alert_text():
             return False
         return True
@@ -98,64 +113,95 @@ class OneXBet(object):
 
     @classmethod
     def login(cls, user, password):
-        logged_in = True
-        driver.get("https://1xbet.com/en/line/Football/")
+        pass
 
     @classmethod
     def bet(cls, nav, amount):
-        print (nav)
+        if nav["scope"] == "prematch":
+            driver.get("https://1xbet.com/en/line/Football/")
+            arrows = driver.find_elements(By.XPATH, '//span[@class="strelochka arr_open"]')
+            for arrow in arrows:
+                try:
+                    driver.execute_script("arguments[0].click()", arrow)
+                    time.sleep(0.05)
+                except Exception as e:
+                    print (e)
 
-        arrows = driver.find_elements(By.XPATH, '//span[@class="strelochka arr_open"]')
-        for arrow in arrows:
-            try:
-                driver.execute_script("arguments[0].click()", arrow)
-                time.sleep(0.05)
-            except Exception as e:
-                print (e)
+                try:
+                    leagueId = nav["leagueId"]
+                    el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(leagueId))
+                    driver.execute_script("arguments[0].click()", el)
+                    break
+                except Exception as e:
+                    print (e)
+        else:
+            driver.get("https://1xbet.com/en/live/")
 
-            try:
-                leagueId = nav["leagueId"]
-                el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(leagueId))
-                driver.execute_script("arguments[0].click()", el)
-                break
-            except Exception as e:
-                print (e)
 
         eventId = nav["eventId"]
         time.sleep(0.5)
         el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(eventId))
         driver.execute_script("arguments[0].click()", el)
 
+        print ('----------------------------------------------')
+
         type_id = nav["type_id"]
-        # 2 - "1"
-        # 3 - "X"
-        # 4 - "2"
         betting_map = {
-            2: 1,
-            3: 2,
-            4: 3
+            ODD_TYPES["1"]: 1,
+            ODD_TYPES["X"]: 2,
+            ODD_TYPES["2"]: 3,
+            ODD_TYPES["1X"]: 4,
+            ODD_TYPES["12"]: 5,
+            ODD_TYPES["X2"]: 6,
+            ODD_TYPES["Over"]: 9,
+            ODD_TYPES["Under"]: 10
         }
-        to_click = betting_map[type_id]
+
+        print (type_id)
 
         time.sleep(0.25)
-        el = driver.find_element_by_xpath("//span[@class=\"bet_type\" and @data-type=\"{}\"]".format(to_click))
-        driver.execute_script("arguments[0].click()", el)
+        if type_id == ODD_TYPES["Over"] or type_id == ODD_TYPES["Under"]:
+            print ("!!!!!!!!!")
+            to_click_id = betting_map[type_id]
+            to_click_hc = None
 
-        time.sleep(0.25)
+            if type_id == ODD_TYPES["Over"]:
+                to_click_hc = "Total Over {:.1f}".format(nav["hc"]).replace('.0', '')
+            else:
+                to_click_hc = "Total Under {:.1f}".format(nav["hc"]).replace('.0', '')
+
+            print (to_click_id, to_click_hc)
+
+            el = driver.find_element_by_xpath("//span[@data-type=\"{}\" and contains(text(), \"{}\")]".format(to_click_id, to_click_hc))
+            el.click()
+        else:
+            print("??????????")
+            to_click = betting_map[type_id]
+            el = driver.find_element_by_xpath("//span[@class=\"bet_type\" and @data-type=\"{}\"]".format(to_click))
+            driver.execute_script("arguments[0].click()", el)
+
         el = driver.find_element_by_xpath("//input[@class=\"c-spinner__input bet_sum_input\"]")
         el.click()
+        time.sleep(0.25)
         el.clear()
-        el.send_keys(str(amount))
+        el.send_keys(str_float(amount))
 
+        time.sleep(0.25)
         el = driver.find_element_by_xpath("//button[contains(text(), \"place a bet\")]")
         el.click()
 
-        return False
+        time.sleep(2)
+        return True
 # ---------------------------------------------------------------------------------------------------
 
 
 def init():
     global driver, browser_state
+
+    chrome_options = webdriver.ChromeOptions()
+    # don't open the browser
+    #chrome_options.add_argument("headless")
+    chrome_options.add_argument("--window-size=1920,1080")
 
     try:
         load_state()
@@ -164,16 +210,13 @@ def init():
         if browser_state["1xBet"]:
             OneXBet.logged_in = True
         #driver = SessionRemote(command_executor=browser_state["url"],desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
-        driver=webdriver.Remote(command_executor=browser_state["url"],desired_capabilities=webdriver.DesiredCapabilities.CHROME)
+        driver=webdriver.Remote(command_executor=browser_state["url"],desired_capabilities=chrome_options.to_capabilities())
         driver.session_id = browser_state["id"]
 
     except Exception as e:
         print ("Nothing to load {}".format(e))
-        options = Options()
-        # don't open the browser
-        options.headless = False
         #driver = SessionRemote("http://127.0.0.1:4444",desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
-        driver=webdriver.Remote("http://127.0.0.1:9515",desired_capabilities=webdriver.DesiredCapabilities.CHROME)
+        driver=webdriver.Remote("http://127.0.0.1:9515",desired_capabilities=chrome_options.to_capabilities())
 
         browser_state["url"] = driver.command_executor._url
         browser_state["id"]  = driver.session_id
@@ -188,7 +231,7 @@ def destroy():
     pass
 
 def scroll():
-    SCROLL_PAUSE_TIME = 0.5
+    SCROLL_PAUSE_TIME = 0.3
 
     # Scroll down to bottom
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -233,5 +276,10 @@ def bet(bookmaker, nav, amount):
     return False
 
 
-#login("1xBet")
-#bet("1xBet", {"leagueId":108319,"eventId":41691625,"type_id":2}, 100)
+def main():
+    login("1xBet")
+    #bet("1xBet", {"leagueId":108319,"eventId":41691625,"type_id":2}, 100)
+
+
+if __name__ == "__main__":
+    main()

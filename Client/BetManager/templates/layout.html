@@ -5,8 +5,21 @@
 </head>
 
 <body style="margin-top:15px; margin-left:15px">
-    <a href="/"><img style="width:600px;height:180px" src="/static/img/Logo.png"></img></a>
-    
+    <nav>
+      <div class="nav-wrapper">
+        <a href="/" class="brand-logo">BetManager</a>
+        <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+          <li><a href="/surebets">Sure bets</a></li>
+          <li><a href="/history">History</a></li>
+        </ul>
+      </div>
+    </nav>
+    <ul class="sidenav" id="mobile-demo">
+      <li><a href="/surebets">Sure bets</a></li>
+      <li><a href="/history">History</a></li>
+    </ul>
+
     <div style="text-align:center;">
         {% block content %}
         {% endblock %}
@@ -14,3 +27,10 @@
     
     <script type="text/javascript" src="/static/js/materialize.min.js"></script>
 </body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.sidenav');
+    var instances = M.Sidenav.init(elems);
+  });
+</script>

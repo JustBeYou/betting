@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% for row in bets_rows %}
+  <div class="row">
+    {% for col in row %}
+      <div class="col s12 m6">
+        <div class="card blue-grey darken-1">
+          <div class="card-content white-text">
+            <span class="card-title">{{ col["-1"]["home"] }} - {{ col["-1"]["away"] }}</span>
+            <table class="striped">
+              <thead>
+                <th>Bet</th>
+                <th>Bookmaker</th>
+                <th>Price</th>
+              </thead>
+              
+              <tbody>
+                {% for k in col.keys() %}
+                  {% if k != '-1' and k != '-2' %}
+                    <tr>
+                      <td>{{ mapping[col[k]["type_id"]] }}
+                      {% if col[k]["hc"] != 0 %}
+                      {{ col[k]["hc"] }}
+                      {% endif %}
+                      </td>
+                      <td>{{ col[k]["bookmaker"]["name"] }}</td>
+                      <td>{{ col[k]["price"] }}</td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+            Expected profit: {{col["-2"]}}%
+            <form action="/surebets" method="POST">
+              <input type="number" name="max_amount"></input>
+              <input type="hidden" name="bet" value="{{col | dumps | to_bytes | b64encode }}"></input>
+              <button class="btn waves-effect waves-light" type="submit" name="action">Bet on this
+                <i class="material-icons right">send</i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+
+
+<script>
+  setTimeout(function() {
+    location.reload();
+  }, 10 * 1000);
+</script>
+{% endblock %}
+

@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>History</h1>
+<table class="table">
+    <tr>
+        <th>Time</th>
+        <th>Match ID</th>
+        <th>Home</th>
+        <th>Away</th>
+        <th>Bet</th>
+        <th>Price</th>
+        <th>Amount</th>
+    </tr>
+    <tbody>
+        {% for e in history %}
+        <tr>
+          <td>{{ e.time }}</td>
+          <td>{{ e.match_id }}</td>
+          <td>{{ e.home }}</td>
+          <td>{{ e.away }}</td>
+          <td>{{ e.odd_type }}</td>
+          <td>{{ e.price }}</td>
+          <td>{{ e.amount }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+  setTimeout(function() {
+    location.reload();
+  }, 360 * 1000);
+</script>
+{% endblock %}
