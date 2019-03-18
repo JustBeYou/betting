@@ -25,7 +25,7 @@ from multiprocessing import Process
 from time import sleep
 from datetime import datetime
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 log = logging.getLogger(__name__)
 
 # Initialize Flask and register a blueprint

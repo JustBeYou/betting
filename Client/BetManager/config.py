@@ -1,2 +1,5 @@
 API_URL = 'http://104.238.189.162/api/'
 MATCHES_UPDATE_INTERVAL = 5
+
+# --------- TESTING CONFIGURATION ---------------
+DEBUG_BETTING = True

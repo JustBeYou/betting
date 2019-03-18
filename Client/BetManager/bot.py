@@ -10,6 +10,7 @@ import time
 import pickle
 
 from BetManager.mainApi import ODD_TYPES
+from BetManager.config import *
 
 def str_float(x):
     return "{:.2f}".format(x)
@@ -98,6 +99,9 @@ class Pinnacle(object):
             driver.find_element(By.XPATH, '//input[@class="stakeInput"]').send_keys(c)
             time.sleep(0.2)
 
+        if DEBUG_BETTING:
+            print ("actual betting disabled")
+            return False
         driver.find_element(By.XPATH, '//a[@id="BetTicketSubmitLink"]').click()
         confirm()
         time.sleep(0.5)
@@ -135,11 +139,11 @@ class OneXBet(object):
                 except Exception as e:
                     print (e)
         else:
-            driver.get("https://1xbet.com/en/live/")
+            driver.get("https://1xbet.com/en/live/Football/")
 
 
         eventId = nav["eventId"]
-        time.sleep(0.5)
+        time.sleep(3)
         el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(eventId))
         driver.execute_script("arguments[0].click()", el)
 
@@ -188,6 +192,8 @@ class OneXBet(object):
 
         time.sleep(0.25)
         el = driver.find_element_by_xpath("//button[contains(text(), \"place a bet\")]")
+
+        if DEBUG_BETTING: return False
         el.click()
 
         time.sleep(2)

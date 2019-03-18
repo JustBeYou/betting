@@ -11,7 +11,7 @@ from BetManager import app, init_webapp
 from BetManager.model import db
 from BetManager.worker import BackgroundWorker
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 log = logging.getLogger(__name__)
 
 manager = Manager(app)
