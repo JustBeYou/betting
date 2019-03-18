@@ -1,63 +1,112 @@
 # module for finding the best sure bet for a match.
 # author: Gabi Tulba
 class BetFinder:
-    def __init__(self, match, sureBets):
+    def __init__(self, match, sureBets = {}, handicap = False, handicapSureBets = {}):
         self.match = match
+        self.handicap = handicap
         self.sureBets = sureBets
-        self.bestBets = {}
-        self.periods = {}
+        self.handicapSureBets = handicapSureBets
+        self.bestHCSol = {}
+        self.bestSol = {}
         self.bestBet = {}
         self.bestPrice = 1.0
-        self.__findBestBet()
+        self.bestHCBet = {}
+        self.bestHCPrice = 1.0
+        self.finalBet = {}
+        self.finalPrice = 1.0
+        self.__findBestOdds()
 
-    def __findBestBet(self):
-        try:
-            for odd in self.match["odds"]:
-                if odd["hc"] != 0: continue
-                if not odd["period_id"] in self.periods:
-                    self.periods[odd["period_id"]] = 1
-                    self.bestBets[odd["period_id"]] = {odd["type_id"]:odd}
-                elif not odd["type_id"] in self.bestBets[odd["period_id"]]:
-                    self.bestBets[odd["period_id"]][odd["type_id"]] = odd
-                elif odd["price"] > self.bestBets[odd["period_id"]][odd["type_id"]]["price"]:
-                    self.bestBets[odd["period_id"]][odd["type_id"]] = odd
-
-            for period_id in self.periods:
-                current = {}
-                priceSum = 0
+    def __getBestHandicap(self):
+        for period in self.bestHCSol:
+            for hc in self.bestHCSol[period]:
                 try:
-                    for sureBet in self.sureBets:
+                    for sureBet in self.handicapSureBets:
+                        current = {}
+                        priceSum = 0.0
                         for type_id in sureBet:
-                            current[type_id] = self.bestBets[period_id][type_id]
+                            current[type_id] = self.bestHCSol[period][hc][type_id]
+                            priceSum += 1.0 / current[type_id]["price"]
+                        if len(current) == len(sureBet):
+                            if priceSum < self.bestHCPrice or DEBUG_FAKE_SUREBET:
+                                self.bestHCPrice = priceSum
+                                self.bestHCBet = current
                 except:
                     continue
 
-                for type_id in current:
-                    odd = current[type_id]
-                    priceSum += 1.0 / odd["price"]
+    def __getBestClassic(self):
+        for period in self.bestSol:
+                try:
+                    for sureBet in self.sureBets:
+                        current = {}
+                        priceSum = 0.0
+                        for type_id in sureBet:
+                            current[type_id] = self.bestSol[period][type_id]
+                            priceSum += 1.0 / current[type_id]["price"]
+                        if len(current) == len(sureBet):
+                            if priceSum < self.bestPrice:
+                                self.bestPrice = priceSum
+                                self.bestBet = current
+                except:
+                    continue
 
-                if(priceSum < self.bestPrice):
-                    self.bestPrice = priceSum
-                    self.bestBet = current
+    def __findBestOdds(self):
+        try:
+            for odd in self.match["odds"]:
+                if odd["hc"] - int(odd["hc"]) == 0.25 or \
+                   odd["hc"] - int(odd["hc"]) == 0.75:
+                       continue
+
+                if odd["hc"] != 0 :
+                    if not odd["period_id"] in self.bestHCSol:
+                        self.bestHCSol[odd["period_id"]] = {}
+                    if not odd["hc"] in self.bestHCSol[odd["period_id"]]:
+                        self.bestHCSol[odd["period_id"]][odd["hc"]] = {}
+                    if not odd["type_id"] in self.bestHCSol[odd["period_id"]][odd["hc"]]:
+                        self.bestHCSol[odd["period_id"]][odd["hc"]][odd["type_id"]] = odd
+                    elif odd["price"] > self.bestHCSol[odd["period_id"]][odd["hc"]][odd["type_id"]]["price"]:
+                        self.bestHCSol[odd["period_id"]][odd["hc"]][odd["type_id"]] = odd
+                else:
+                    if not odd["period_id"] in self.bestSol:
+                        self.bestSol[odd["period_id"]] = {}
+                    if not odd["type_id"] in self.bestSol[odd["period_id"]]:
+                        self.bestSol[odd["period_id"]][odd["type_id"]] = odd
+                    elif odd["price"] > self.bestSol[odd["period_id"]][odd["type_id"]]["price"]:
+                        self.bestSol[odd["period_id"]][odd["type_id"]] = odd
+            if(self.handicap):
+                self.__getBestHandicap()
+            self.__getBestClassic()
+
+            if len(self.bestHCBet) != 0:
+                self.finalBet = self.bestHCBet
+                self.finalPrice = self.bestHCPrice
+            if len(self.bestBet) != 0:
+                if self.finalPrice > self.bestPrice or DEBUG_FAKE_SUREBET:
+                    self.finalBet = self.bestBet
+                    self.finalPrice = self.bestPrice
+
         except:
-            return "Match format error!"
+            print ("Match format error!")
 
     def printBestBet(self):
-        if(len(self.bestBet) == 0):
+        if(len(self.finalBet) == 0):
             try:
                 print ("No solution has been found for match with id {}!".format(self.match["id"]))
             except:
                 print ("Match format error!")
         else:
-            print ("The best solution for match with id {} has a profit of {}%.".format(self.match["id"], (1.0 - self.bestPrice) * 100))
+            print ("The best solution for match with id {} has a profit of {}%.".format(self.match["id"], (1.0 - self.finalPrice) * 100))
             print ("The solution consists of the following bets:")
-            for type_id in self.bestBet:
-                print (type_id, self.bestBet[type_id])
+            for type_id in self.finalBet:
+                print (type_id, self.finalBet[type_id])
 
     def getBestBet(self):
-        return self.bestBet
+        return self.finalBet
 
-from time import sleep
+    def getProfit(self):
+        return "{:.2f}".format((1.0 - self.finalPrice) * 100)
+
+
+from time import sleep, time
 from datetime import datetime, timedelta
 from BetAPI.oddfeedsApi import *
 from BetAPI.model import Match
@@ -68,6 +117,8 @@ def surebet_thread(db, cache):
 
     #sleep(LIVE_UPDATE_INTERVAL) # delay before start
     while True:
+        start_time = time()
+
         to_update = []
         now = datetime.utcnow()
         if last_prematch_update == None or last_prematch_update + timedelta(minutes=PREMATCH_UPDATE_INTERVAL) < now:
@@ -106,7 +157,7 @@ def surebet_thread(db, cache):
                 "odds": cache[m]
             }
 
-            b = BetFinder(obj, TARGET_BETS)
+            b = BetFinder(obj, TARGET_BETS, True, TARGET_BETS_HC)
             sol = b.getBestBet()
             b.printBestBet()
             if sol != {}:
@@ -114,9 +165,12 @@ def surebet_thread(db, cache):
                     print ("{}-{}: Price={} Bookmaker={} HC={}".format(sol[k]['match_id'], k, sol[k]['price'], sol[k]['bookmaker']['name'], sol[k]['hc']))
                 print ("------------------------------------")
                 sol[-1] = session.query(Match).filter(Match.id == m).first().json
+                sol[-2] = b.getProfit()
                 surebets.append(sol)
- 
+
 
 
         cache["surebets"] = surebets
+
+        print ("Took {}s".format(time() - start_time))
         sleep(LIVE_UPDATE_INTERVAL)

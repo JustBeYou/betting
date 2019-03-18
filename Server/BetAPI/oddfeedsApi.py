@@ -20,14 +20,17 @@ ODD_TYPES = {
 BOOKMAKERS = {
     "Bet365": 26,
     "Pinnacle": 10,
-    "1xBet": 55
+    "1xBet": 55,
+    "BetfairExchange": 47
 }
+UPDATE_PREMATCH = True
+UPDATE_LIVE     = True
 
 def getTournaments():
     try:
         resp = s.post(url, json={
-                "prematch": True,
-                "inplay": True
+                "prematch": UPDATE_PREMATCH,
+                "inplay": UPDATE_LIVE
             })
         return resp.json()
     except:
@@ -47,7 +50,8 @@ def getLeagues(tournaments):
             resp = s.post(url, json={
                 "scope": "leagues",
                 "tournament_ids":e,
-                "inplay":True
+                "prematch":UPDATE_PREMATCH,
+                "inplay":UPDATE_LIVE
                 })
             leagues.append(resp.json())
         except:
@@ -69,7 +73,8 @@ def getMatches(leagues):
             resp = s.post(url, json={
                 "scope":"matches",
                 "league_ids":e,
-                "inplay":True
+                "prematch":UPDATE_PREMATCH,
+                "inplay":UPDATE_LIVE
                 })
             matches.append(resp.json())
         except:
@@ -97,7 +102,8 @@ def worker_getOdds(config):
                 "bookmaker_ids":bookmakers,
                 "odd_type_ids":types,
                 "odd_period_ids":[1, 0, 6],
-                "inplay":True
+                "prematch":UPDATE_PREMATCH,
+                "inplay":UPDATE_LIVE
                 })
 
             r = resp.json()
