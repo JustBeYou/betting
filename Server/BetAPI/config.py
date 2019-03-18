@@ -1,3 +1,6 @@
+from os import path
+LOGGING_CONFIG = path.join(path.dirname(__file__), "logger.yaml")
+
 AHEAD_INTERVAL = 1 * 120 # minutes
 PREMATCH_UPDATE_INTERVAL = 3 # minutes
 LIVE_UPDATE_INTERVAL = 30 # seconds

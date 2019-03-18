@@ -93,7 +93,6 @@ def worker_getOdds(config):
     odds = []
     i = 1
     for e in ids:
-        print ("[{}] {}/{}".format(worker, i, len(ids)))
         i += 1
         try:
             resp = s.post(url, json={
@@ -109,41 +108,10 @@ def worker_getOdds(config):
             r = resp.json()
             odds.append(r)
         except Exception as e:
-            print ("[ERROR] {}".format(e))
-    return odds
-
-def parallel_getOdds(cnt, ids, bookmakers, types):
-    k = int(len(ids) / cnt)
-    ids = [ids[i:i+k] for i in range(0, len(ids), k)]
-
-    configs = []
-    for i, e in enumerate(ids):
-        c = {
-            "worker": i,
-            "ids": e,
-            "bookmakers":bookmakers,
-            "types":types
-        }
-        configs.append(c)
-
-    p = Pool(cnt)
-    r = p.map(worker_getOdds, configs)
-
-    odds = {
-        "prematch": [],
-        "inplay": []
-    }
-    for l in r:
-        for ll in l:
-            odds["prematch"] += ll['data']['prematch']
-            odds["inplay"]   += ll['data']['inplay']
-
+            logging.warn("[ERROR] {}".format(e))
     return odds
 
 def getOdds(cnt, ids, bookmakers, types):
-    #k = int(len(ids) / cnt)
-    #ids = [ids[i:i+k] for i in range(0, len(ids), k)]
-
     config = {
         "worker": cnt,
         "ids": ids,
@@ -183,5 +151,6 @@ def getData(bookmakers, types, get_odds=False):
 
 def getOddsForMatch(id, bookmakers, types):
     return {'odds':getOdds(1, [id], bookmakers, types)}
+
 def getOddsForMatches(ids,bookmakers,types):
     return {'odds':getOdds(1, ids, bookmakers, types)}

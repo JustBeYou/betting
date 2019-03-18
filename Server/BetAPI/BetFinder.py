@@ -1,5 +1,5 @@
-# module for finding the best sure bet for a match.
-# author: Gabi Tulba
+import logging
+
 class BetFinder:
     def __init__(self, match, sureBets = {}, handicap = False, handicapSureBets = {}):
         self.match = match
@@ -85,7 +85,7 @@ class BetFinder:
                     self.finalPrice = self.bestPrice
 
         except:
-            print ("Match format error!")
+            logging.info("Match format error!")
 
     def printBestBet(self):
         if(len(self.finalBet) == 0):
@@ -115,7 +115,6 @@ def surebet_thread(db, cache):
     last_prematch_update = None
     session = db.create_scoped_session()
 
-    #sleep(LIVE_UPDATE_INTERVAL) # delay before start
     while True:
         start_time = time()
 
@@ -159,18 +158,13 @@ def surebet_thread(db, cache):
 
             b = BetFinder(obj, TARGET_BETS, True, TARGET_BETS_HC)
             sol = b.getBestBet()
-            b.printBestBet()
             if sol != {}:
-                for k in sol.keys():
-                    print ("{}-{}: Price={} Bookmaker={} HC={}".format(sol[k]['match_id'], k, sol[k]['price'], sol[k]['bookmaker']['name'], sol[k]['hc']))
-                print ("------------------------------------")
-                sol[-1] = session.query(Match).filter(Match.id == m).first().json
-                sol[-2] = b.getProfit()
-                surebets.append(sol)
-
-
-
+                surebets.append({
+                    "match": session.query(Match).filter(Match.id == m).first().json,
+                    "profit": b.getProfit(),
+                    "odds": sol
+                    })
         cache["surebets"] = surebets
 
-        print ("Took {}s".format(time() - start_time))
+        logging.info("Surebet calculator took {:.2}s".format(time() - start_time))
         sleep(LIVE_UPDATE_INTERVAL)

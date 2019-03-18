@@ -1,0 +1,38 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s'
+
+loggers:
+  all:
+    handlers: [all]
+    propagate: true
+  warn:
+    handlers: [warn]
+    propagate: true
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+  all:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: INFO
+    formatter: simple
+    when: W0
+    backupCount: 4
+    filename: all.log
+  warn:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: WARNING
+    formatter: simple
+    when: W0
+    backupCount: 4
+    filename: warn.log
+
+root:
+  level: INFO
+  handlers: [console, all, warn]
+  propagate: true

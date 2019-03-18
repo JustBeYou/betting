@@ -18,7 +18,6 @@ manager = Manager(app)
 
 @manager.command
 def start_background_worker():
-    """Start the background worker."""
     worker = BackgroundWorker(interval=1)
     log.info('Starting worker. Hit CTRL-C to exit!')
     worker.start()
@@ -31,20 +30,15 @@ def start_background_worker():
 
 @manager.command
 def prime_database():
-    """Prime database with some fake data."""
     init_webapp()
     db.session.commit()
 
 @manager.command
 def runserver(*args, **kwargs):
-    """Override default `runserver` to init webapp before running."""
     app = init_webapp()
-    # TODO(sholsapp): parameterize this, but don't clobber the *args, **kwargs
-    # space, because it's annoying to have to pass these in to the `run` method.
     config = ConfigObj('config/sample.config', configspec='config/sample.configspec')
     app.config_obj = config
     app.run(host='0.0.0.0', port=80,*args, **kwargs)
-
 
 if __name__ == "__main__":
     manager.run()
