@@ -19,37 +19,29 @@ from BetManager.api import api
 from BetManager.middleware import LoggingMiddleware
 from BetManager.model import make_conn_str, db, Match, History
 from BetManager.mainApi import *
-from sqlalchemy import desc, asc
+import BetManager.bot as bot
 
+from sqlalchemy import desc, asc
 from multiprocessing import Process
 from time import sleep
 from datetime import datetime
+from base64 import b64encode, b64decode
+from json import loads, dumps
 
-logging.basicConfig(level=logging.ERROR)
-log = logging.getLogger(__name__)
+import logging
+import logging.config
+import yaml
+logging.config.dictConfig(yaml.load(open(LOGGING_CONFIG, 'r'), Loader=yaml.FullLoader))
 
-# Initialize Flask and register a blueprint
 app = Flask(__name__)
 
 def restless_api_auth_func(*args, **kw):
-    """A request processor that ensures requests are authenticated.
-
-    Flask-Restless endpoints are generated automatically and thus do not have a
-    Flask route function that we can decorate with the
-    :func:`flask_security.auth_token_required` decorator. This function
-    mimics the route function and satisfies the Flask-Restless request processor
-    contract.
-
-    """
     @auth_token_required
     def check_authentication():
         return
     rsp = check_authentication()
-    # TODO(sholsapp): There are additional response codes that would result in
-    # processing exceptions, this need to be addressed here.
     if rsp and rsp.status_code in [401]:
         raise ProcessingException(description='Not authenticated!', code=401)
-
 
 def matches_updater(db):
     session = db.create_scoped_session()
@@ -81,19 +73,7 @@ def matches_updater(db):
 
         sleep(60 * MATCHES_UPDATE_INTERVAL)
 
-from base64 import b64encode, b64decode
-from json import dumps
-
 def init_webapp():
-    """Initialize the web application."""
-
-    # logging.getLogger('flask_cors').level = logging.DEBUG
-    # app.wsgi_app = LoggingMiddleware(app.wsgi_app)
-
-    # Note, this url namespace also exists for the Flask-Restless
-    # extension and is where CRUD interfaces live, so be careful not to
-    # collide with model names here. We could change this, but it's nice
-    # to have API live in the same url namespace.
     def to_bytes(s):
         return bytes(s, encoding="utf8")
 
@@ -103,28 +83,17 @@ def init_webapp():
     app.add_template_filter(b64decode)
     app.register_blueprint(api, url_prefix='/api')
 
-    # Initialize Flask configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = make_conn_str()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'S0m37h1ng_S0m37h1ng_S3kr1t_K3y____!@#$'
     app.config['WTF_CSRF_ENABLED'] = True
     app.config['WTF_CSRF_SECRET_KEY'] = 'S0m37h1ng_S0m37h1ng_S3kr1t_CSRF_K3y____!@#$'
     app.config['SECURITY_TOKEN_MAX_AGE'] = 60
     app.config['SECURITY_TOKEN_AUTHENTICATION_HEADER'] = 'Auth-Token'
-    # app.config['SECURITY_POST_LOGIN_VIEW'] = 'http://127.0.0.1:4200'
-    # app.config['CORS_HEADERS'] = 'Content-Type'
 
-    # Initialize Flask-CORS
     CORS(app, supports_credentials=True)
-    # CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
-
-    # Initialize Flask-Bootstrap
     Bootstrap(app)
 
-    # Initialize Flask-Security
-    #user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    #security = Security(app, user_datastore)
-
-    # Initialize Flask-SQLAlchemy
     db.app = app
     db.init_app(app)
     db.create_all()
@@ -133,22 +102,11 @@ def init_webapp():
     p.daemon = True
     p.start()
 
-    # Initialize Flask-Restless
-    #manager = APIManager(
-    #  app,
-    #  flask_sqlalchemy_db=db,
-    #  preprocessors=dict(GET_MANY=[restless_api_auth_func]),
-    #)
-    #manager.create_api(Employee, methods=['GET', 'POST', 'OPTIONS'])
     return app
 
 @app.route('/')
 def index():
     return render_template('index.html', matches=Match.query.order_by(asc(Match.time)).all())
-
-from base64 import b64decode
-from json import loads
-import BetManager.bot as bot
 
 def str_float(x):
     return "{:.2f}".format(x)
@@ -166,26 +124,28 @@ def surebets():
             data = loads(b64decode(request.form['bet'].replace('b\'', '').replace('\'', '')))
             max_amount = int(request.form['max_amount'])
             to_add = []
-            for k in data.keys():
-                if k == "-1" or k == "-2": continue
-                to_bet = float(str_float(max_amount / data[k]["price"]))
-                h = History(data["-1"]['id'], data["-1"]["home"], data["-1"]["away"], ODD_TYPES_IDS[data[k]["type_id"]], data[k]["price"], to_bet)
+            for k in data["odds"].keys():
+                to_bet = float(str_float(max_amount / data["odds"][k]["price"]))
+                h = History(data["match"]['id'],
+                            data["match"]["home"],
+                            data["match"]["away"],
+                            ODD_TYPES_IDS[data["odds"][k]["type_id"]],
+                            data["odds"][k]["price"], to_bet)
                 to_add.append(h)
-                nav = loads(data[k]["nav"])
-                nav["type_id"] = data[k]["type_id"]
-                nav["hc"] = data[k]["hc"]
+                nav = loads(data["odds"][k]["nav"])
+                nav["type_id"] = data["odds"][k]["type_id"]
+                nav["hc"] = data["odds"][k]["hc"]
 
-                print (data[k]["bookmaker"]["name"])
-                print (data[k])
-                bot.login(data[k]["bookmaker"]["name"])
-                bot.bet(data[k]["bookmaker"]["name"], nav, to_bet)
+                bot.login(data["odds"][k]["bookmaker"]["name"])
+                bot.bet(data["odds"][k]["bookmaker"]["name"], nav, to_bet)
 
             for e in to_add:
                 db.session.add(e)
             db.session.commit()
         except Exception as e:
-            return "Can't bet: {}".format(e)
+            logging.warn("Can't bet: {}".format(e))
 
+        # TODO: return successful/failed bet (+ Javascript popup box in HTML template)
         return redirect('/surebets', code=302)
 
 @app.route('/history')

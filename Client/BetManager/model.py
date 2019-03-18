@@ -45,5 +45,4 @@ class History(db.Model):
         self.amount = amount
 
 def make_conn_str():
-    """Make an local database file on disk."""
     return 'sqlite:///BetManager.db'

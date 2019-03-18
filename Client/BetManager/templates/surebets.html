@@ -7,7 +7,7 @@
       <div class="col s12 m6">
         <div class="card blue-grey darken-1">
           <div class="card-content white-text">
-            <span class="card-title">{{ col["-1"]["home"] }} - {{ col["-1"]["away"] }}</span>
+            <span class="card-title">{{ col["match"]["home"] }} - {{ col["match"]["away"] }}</span>
             <table class="striped">
               <thead>
                 <th>Bet</th>
@@ -16,22 +16,20 @@
               </thead>
               
               <tbody>
-                {% for k in col.keys() %}
-                  {% if k != '-1' and k != '-2' %}
-                    <tr>
-                      <td>{{ mapping[col[k]["type_id"]] }}
-                      {% if col[k]["hc"] != 0 %}
-                      {{ col[k]["hc"] }}
-                      {% endif %}
-                      </td>
-                      <td>{{ col[k]["bookmaker"]["name"] }}</td>
-                      <td>{{ col[k]["price"] }}</td>
-                    </tr>
-                  {% endif %}
+                {% for k in col["odds"].keys() %}
+                  <tr>
+                    <td>{{ mapping[col["odds"][k]["type_id"]] }}
+                    {% if col["odds"][k]["hc"] != 0 %}
+                    {{ col["odds"][k]["hc"] }}
+                    {% endif %}
+                    </td>
+                    <td>{{ col["odds"][k]["bookmaker"]["name"] }}</td>
+                    <td>{{ col["odds"][k]["price"] }}</td>
+                  </tr>
                 {% endfor %}
               </tbody>
             </table>
-            Expected profit: {{col["-2"]}}%
+            Expected profit: {{col["profit"]}}%
             <form action="/surebets" method="POST">
               <input type="number" name="max_amount"></input>
               <input type="hidden" name="bet" value="{{col | dumps | to_bytes | b64encode }}"></input>

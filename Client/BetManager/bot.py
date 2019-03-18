@@ -5,35 +5,91 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from lxml.html import fromstring
+from json import loads, dump
 import urllib.parse
 import time
 import pickle
+import logging
+import re
 
 from BetManager.mainApi import ODD_TYPES
 from BetManager.config import *
 
+# Global state
+driver = None
+browser_state = {}
+
+# Helpers
 def str_float(x):
     return "{:.2f}".format(x)
 
 def urldecode(s):
     return urllib.parse.unquote(s)
 
-driver = None
-browser_state = {}
 def load_state():
     global browser_state
-    browser_state = pickle.load( open( "browser.session", "rb" ) )
-def save_state():
-    pickle.dump( browser_state, open( "browser.session", "wb" ) )
+    browser_state = pickle.load(open("browser.session", "rb"))
 
-class SessionRemote(webdriver.Remote):
-    """def start_session(self, desired_capabilities, browser_profile=None):
-        # Skip the NEW_SESSION command issued by the original driver
-        # and set only some required attributes
-        self.w3c = True
-    """
-    pass
-# ---------------------------------------------------------------------------------------------------------
+def save_state():
+    pickle.dump( browser_state, open("browser.session", "wb"))
+
+# Basic bitch
+def init():
+    global driver, browser_state
+
+    chrome_options = webdriver.ChromeOptions()
+    if HEADLESS:
+        chrome_options.add_argument("headless")
+    chrome_options.add_argument("--window-size=1920,1080")
+
+    try:
+        logging.info("Trying to load saved browser session")
+        load_state()
+        if browser_state["Pinnacle"]:
+            Pinnacle.logged_in = True
+        if browser_state["1xBet"]:
+            OneXBet.logged_in = True
+        driver=webdriver.Remote(command_executor=browser_state["url"],desired_capabilities=chrome_options.to_capabilities())
+        driver.session_id = browser_state["id"]
+        logging.info("Session loaded successfully: {}".format(driver.session_id))
+
+    except Exception as e:
+        driver=webdriver.Remote("http://127.0.0.1:9515",desired_capabilities=chrome_options.to_capabilities())
+
+        browser_state["url"] = driver.command_executor._url
+        browser_state["id"]  = driver.session_id
+        browser_state["Pinnacle"] = False
+        browser_state["1xBet"] = False
+        logging.info("Failed to load session. New session created: {}".format(driver.session_id))
+
+    save_state()
+
+def scroll():
+    SCROLL_PAUSE_TIME = 0.3
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(SCROLL_PAUSE_TIME)
+
+def confirm():
+    try:
+        WebDriverWait(driver, 3).until(EC.alert_is_present())
+        alert = driver.switch_to_alert()
+        alert.accept()
+    except TimeoutException:
+        pass
+
+def alert_text():
+    text = ""
+    try:
+        WebDriverWait(driver, 3).until(EC.alert_is_present())
+        alert = driver.switch_to_alert()
+        text = alert.text
+        alert.accept()
+    except TimeoutException:
+        pass
+
+    return text
+
+# Individual bookmakers automatization
 class Pinnacle(object):
     logged_in = False
 
@@ -45,25 +101,22 @@ class Pinnacle(object):
         browser_state["Pinnacle"] = True
         save_state()
 
-        print ("[*] Login with {}:{}".format(user, password))
-
         driver.get("https://www.pinnacle.com/en/")
         driver.find_element(By.XPATH, '//input[@name="CustomerId"]').send_keys(user)
         driver.find_element(By.XPATH, '//input[@name="Password"]').send_keys(password)
         driver.find_element(By.XPATH, '//a[@id="loginControlsButton"]').click()
 
-        # save the page, debugging only purpose
-        #with open('save.html', 'w') as f:
-        #    f.write(driver.page_source.encode("utf-8"))
-        print ("[+] Done")
     @classmethod
     def bet(cls, nav, amount):
-        print ("bet on pinnacle")
         driver.get('https://members.pinnacle.com/Sportsbook')
+        if re.search(r'Your session has expired', driver.page_source) != None:
+            cls.logged_in = False
+            cls.login("BC999271", "Bogdan197!")
+            logging.info("Restoring session on Pinnacle")
+
         el = driver.find_element_by_xpath('//a[@href="/Sportsbook/?sport=Soccer"]')
         driver.execute_script("arguments[0].click()", el)
         time.sleep(1)
-
 
         driver.get('https://members.pinnacle.com/Sportsbook/Asia/en-GB/Bet/Soccer/Today/Double/null/0/Regular/SportsBookAll/Decimal/45/#tab=Menu&sport=/Sportsbook/Asia/en-GB/GetLines/Soccer/Today/1/null/0/Regular/SportsBookAll/Decimal/45/false/')
         try:
@@ -73,8 +126,6 @@ class Pinnacle(object):
             pass
         time.sleep(1)
 
-        print ("it will scroll")
-
         scrolls = 0
         while scrolls < 80:
             try:
@@ -83,12 +134,12 @@ class Pinnacle(object):
                break
             except Exception as e:
                 scroll()
-                print ("Didn't find yet: {}".format(e))
         scroll()
-
         time.sleep(1)
+
         el = driver.find_element_by_xpath('//a[contains(@href, \"{}\")]'.format(nav["nav"]))
         driver.execute_script("arguments[0].click()", el)
+
         time.sleep(0.5)
         confirm()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').click()
@@ -100,20 +151,29 @@ class Pinnacle(object):
             time.sleep(0.2)
 
         if DEBUG_BETTING:
-            print ("actual betting disabled")
+            logging.info("Actual betting is disabled (Pinnacle)")
             return False
+
         driver.find_element(By.XPATH, '//a[@id="BetTicketSubmitLink"]').click()
         confirm()
-        time.sleep(0.5)
 
         time.sleep(3)
         if "insufficient funds" in alert_text():
             return False
         return True
-# ---------------------------------------------------------------------------------------------------
 
 class OneXBet(object):
     logged_in = False
+    betting_map = {
+        ODD_TYPES["1"]: 1,
+        ODD_TYPES["X"]: 2,
+        ODD_TYPES["2"]: 3,
+        ODD_TYPES["1X"]: 4,
+        ODD_TYPES["12"]: 5,
+        ODD_TYPES["X2"]: 6,
+        ODD_TYPES["Over"]: 9,
+        ODD_TYPES["Under"]: 10
+    }
 
     @classmethod
     def login(cls, user, password):
@@ -129,7 +189,7 @@ class OneXBet(object):
                     driver.execute_script("arguments[0].click()", arrow)
                     time.sleep(0.05)
                 except Exception as e:
-                    print (e)
+                    pass
 
                 try:
                     leagueId = nav["leagueId"]
@@ -137,36 +197,19 @@ class OneXBet(object):
                     driver.execute_script("arguments[0].click()", el)
                     break
                 except Exception as e:
-                    print (e)
+                    pass
         else:
             driver.get("https://1xbet.com/en/live/Football/")
-
+        time.sleep(3)
 
         eventId = nav["eventId"]
-        time.sleep(3)
         el = driver.find_element_by_xpath("//a[contains(@href, \"{}\")]".format(eventId))
         driver.execute_script("arguments[0].click()", el)
-
-        print ('----------------------------------------------')
+        time.sleep(0.25)
 
         type_id = nav["type_id"]
-        betting_map = {
-            ODD_TYPES["1"]: 1,
-            ODD_TYPES["X"]: 2,
-            ODD_TYPES["2"]: 3,
-            ODD_TYPES["1X"]: 4,
-            ODD_TYPES["12"]: 5,
-            ODD_TYPES["X2"]: 6,
-            ODD_TYPES["Over"]: 9,
-            ODD_TYPES["Under"]: 10
-        }
-
-        print (type_id)
-
-        time.sleep(0.25)
         if type_id == ODD_TYPES["Over"] or type_id == ODD_TYPES["Under"]:
-            print ("!!!!!!!!!")
-            to_click_id = betting_map[type_id]
+            to_click_id = OneXBet.betting_map[type_id]
             to_click_hc = None
 
             if type_id == ODD_TYPES["Over"]:
@@ -174,13 +217,10 @@ class OneXBet(object):
             else:
                 to_click_hc = "Total Under {:.1f}".format(nav["hc"]).replace('.0', '')
 
-            print (to_click_id, to_click_hc)
-
             el = driver.find_element_by_xpath("//span[@data-type=\"{}\" and contains(text(), \"{}\")]".format(to_click_id, to_click_hc))
             el.click()
         else:
-            print("??????????")
-            to_click = betting_map[type_id]
+            to_click = OneXBet.betting_map[type_id]
             el = driver.find_element_by_xpath("//span[@class=\"bet_type\" and @data-type=\"{}\"]".format(to_click))
             driver.execute_script("arguments[0].click()", el)
 
@@ -193,86 +233,21 @@ class OneXBet(object):
         time.sleep(0.25)
         el = driver.find_element_by_xpath("//button[contains(text(), \"place a bet\")]")
 
-        if DEBUG_BETTING: return False
+        if DEBUG_BETTING:
+            logging.info("Actual betting is disabled (1xbet)")
         el.click()
 
         time.sleep(2)
         return True
-# ---------------------------------------------------------------------------------------------------
 
-
-def init():
-    global driver, browser_state
-
-    chrome_options = webdriver.ChromeOptions()
-    # don't open the browser
-    #chrome_options.add_argument("headless")
-    chrome_options.add_argument("--window-size=1920,1080")
-
-    try:
-        load_state()
-        if browser_state["Pinnacle"]:
-            Pinnacle.logged_in = True
-        if browser_state["1xBet"]:
-            OneXBet.logged_in = True
-        #driver = SessionRemote(command_executor=browser_state["url"],desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
-        driver=webdriver.Remote(command_executor=browser_state["url"],desired_capabilities=chrome_options.to_capabilities())
-        driver.session_id = browser_state["id"]
-
-    except Exception as e:
-        print ("Nothing to load {}".format(e))
-        #driver = SessionRemote("http://127.0.0.1:4444",desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
-        driver=webdriver.Remote("http://127.0.0.1:9515",desired_capabilities=chrome_options.to_capabilities())
-
-        browser_state["url"] = driver.command_executor._url
-        browser_state["id"]  = driver.session_id
-        browser_state["Pinnacle"] = False
-        browser_state["1xBet"] = False
-
-    save_state()
-def destroy():
-    global driver
-    #driver.quit()
-    #driver = None
-    pass
-
-def scroll():
-    SCROLL_PAUSE_TIME = 0.3
-
-    # Scroll down to bottom
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-    # Wait to load page
-    time.sleep(SCROLL_PAUSE_TIME)
-
-def confirm():
-    try:
-        WebDriverWait(driver, 3).until(EC.alert_is_present())
-
-        alert = driver.switch_to_alert()
-        alert.accept()
-        print("alert accepted")
-    except TimeoutException:
-        print("no alert")
-
-def alert_text():
-    try:
-        WebDriverWait(driver, 3).until(EC.alert_is_present())
-        alert = driver.switch_to_alert()
-        text = alert.text
-        alert.accept()
-        return text
-    except TimeoutException:
-        print("no alert")
-
-    return ""
-
-init()
+# Generic wrappers for login/betting
 def login(bookmaker):
     if bookmaker == "Pinnacle":
         Pinnacle.login("BC999271", "Bogdan197!")
     elif bookmaker == "1xBet":
-        OneXBet.login("bocristian20@gmail.com", "Bogdan1977!")
+        pass
+        # TODO: bypass ReCaptcha v3
+        #OneXBet.login("bocristian20@gmail.com", "Bogdan1977!")
 
 def bet(bookmaker, nav, amount):
     if bookmaker == "Pinnacle":
@@ -281,11 +256,11 @@ def bet(bookmaker, nav, amount):
         return OneXBet.bet(nav, amount)
     return False
 
+# Default initialization
+init()
 
+# Testing code
 def main():
-    login("1xBet")
-    #bet("1xBet", {"leagueId":108319,"eventId":41691625,"type_id":2}, 100)
-
-
+    pass
 if __name__ == "__main__":
     main()
