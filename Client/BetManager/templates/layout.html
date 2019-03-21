@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html>
+
 <head>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="/static/css/materialize.min.css"  media="screen,projection"/>
@@ -26,11 +29,13 @@
     </div>
     
     <script type="text/javascript" src="/static/js/materialize.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var elems = document.querySelectorAll('.sidenav');
+        var instances = M.Sidenav.init(elems);
+      });
+    </script>
+
 </body>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var elems = document.querySelectorAll('.sidenav');
-    var instances = M.Sidenav.init(elems);
-  });
-</script>
+</html>

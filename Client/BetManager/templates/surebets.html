@@ -1,54 +1,139 @@
 {% extends "layout.html" %}
 
 {% block content %}
-{% for row in bets_rows %}
-  <div class="row">
-    {% for col in row %}
-      <div class="col s12 m6">
-        <div class="card blue-grey darken-1">
-          <div class="card-content white-text">
-            <span class="card-title">{{ col["match"]["home"] }} - {{ col["match"]["away"] }}</span>
-            <table class="striped">
-              <thead>
-                <th>Bet</th>
-                <th>Bookmaker</th>
-                <th>Price</th>
-              </thead>
-              
-              <tbody>
-                {% for k in col["odds"].keys() %}
-                  <tr>
-                    <td>{{ mapping[col["odds"][k]["type_id"]] }}
-                    {% if col["odds"][k]["hc"] != 0 %}
-                    {{ col["odds"][k]["hc"] }}
-                    {% endif %}
-                    </td>
-                    <td>{{ col["odds"][k]["bookmaker"]["name"] }}</td>
-                    <td>{{ col["odds"][k]["price"] }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            Expected profit: {{col["profit"]}}%
-            <form action="/surebets" method="POST">
-              <input type="number" name="max_amount"></input>
-              <input type="hidden" name="bet" value="{{col | dumps | to_bytes | b64encode }}"></input>
-              <button class="btn waves-effect waves-light" type="submit" name="action">Bet on this
-                <i class="material-icons right">send</i>
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-{% endfor %}
-
+<div id="mainContainer">
+  
+</div>
 
 <script>
-  setTimeout(function() {
-    location.reload();
-  }, 1000 * 1000);
+  function createRow() {
+    var e = document.createElement("div");
+    e.className = "row";
+    return e;
+  }
+
+  function createCol() {
+    var e = document.createElement("div");
+    e.className = "col s12 m6";
+    return e;
+  }
+
+  const oddMapping = {2: '1', 3: 'X', 4: '2', 5: '1X', 6: '12', 7: 'X2', 8: 'Over', 9: 'Under'};
+
+  function createCard(obj) {
+    var card = document.createElement("div");
+    card.className = "card blue-grey darken-1";
+    var cardContent = document.createElement("div");
+    cardContent.className = "card-content white-text";
+    var cardTitle = document.createElement("span");
+    cardTitle.className = "card-title";
+    cardTitle.innerHTML = obj["match"]["home"] + " - " + obj["match"]["away"];
+
+    var table = document.createElement("table");
+    table.className = "striped";
+    var thead = document.createElement("thead");
+    var headers = ["Bet", "Bookmaker", "Price"];
+    headers.forEach((headerText) => {
+      var th = document.createElement("th");
+      th.innerHTML = headerText;
+      thead.appendChild(th);
+    }); 
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    for (var key in obj["odds"]) {
+      var tr = document.createElement("tr");
+
+      var td = document.createElement("td");
+      td.innerHTML = oddMapping[obj["odds"][key]["type_id"]];
+      if (obj["odds"][key]["hc"] != 0) {
+        td.innerHTML += " " + obj["odds"][key]["hc"].toString();
+      }
+      tr.appendChild(td);
+      td = document.createElement("td");
+      td.innerHTML = obj["odds"][key]["bookmaker"]["name"];
+      tr.appendChild(td);
+      td = document.createElement("td");
+      td.innerHTML = obj["odds"][key]["price"].toString();
+      tr.appendChild(td);
+
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+
+    var profitText = document.createElement("span");
+    profitText.innerHTML = "Expected profit: " + obj["profit"].toString() + "%";
+
+    var amountField = document.createElement("input");
+    amountField.type = "number";
+
+    var betButton = document.createElement("button");
+    betButton.className = "btn waves-effect waves-light";
+    betButton.innerHTML = "Bet on this<i class=\"material-icons right\">send</i>";
+    betButton.betObj = obj;
+    betButton.amount = amountField;
+    betButton.addEventListener('click', async function(e) {
+      await console.log(e.target.betObj);
+      var resp = await fetch('/api/surebets',
+                              {
+                                method: 'post',
+                                headers: {
+                                  'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                  "bet": e.target.betObj,
+                                  "max_amount": e.target.amount.value
+                                })
+                              }
+      );
+      var resp = await resp.json();
+      if (resp["message"] == "ok") {
+        alert("Bet was successfuly placed!");
+      } else {
+        alert("Bet failed: " + resp["message"]);
+      }
+    });
+
+    cardContent.appendChild(cardTitle);
+    cardContent.appendChild(table);
+    cardContent.appendChild(profitText);
+    cardContent.appendChild(amountField);
+    cardContent.appendChild(betButton);
+    card.appendChild(cardContent);
+    return card;
+  }
+
+  async function updateSurebets() {
+    var resp = await fetch('/api/surebets');
+    var jsonObj = await resp.json();
+
+    var rows = [];
+    const chunk = 2;
+    for (var i = 0, j = jsonObj["surebets"].length; i < j; i += chunk) {
+      rows.push(jsonObj["surebets"].slice(i, i + chunk));
+    }
+
+    var mainContainer = document.getElementById("mainContainer");
+    mainContainer.innerHTML = "";
+   
+    rows.forEach((row) => {
+      var rowElem = createRow();
+      
+      row.forEach((col) => {
+        var colElem = createCol();
+        var cardElem = createCard(col);
+        colElem.appendChild(cardElem);
+        rowElem.appendChild(colElem);
+      });
+
+      mainContainer.appendChild(rowElem);
+    });
+  }
+
+  window.onload = function() {
+    updateSurebets();
+    window.setInterval(updateSurebets, 10 * 1000);
+  };
 </script>
 {% endblock %}
 

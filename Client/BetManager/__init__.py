@@ -111,43 +111,10 @@ def index():
 def str_float(x):
     return "{:.2f}".format(x)
 
-@app.route('/surebets', methods=['GET', 'POST'])
+@app.route('/surebets')
 def surebets():
-    if request.method == 'GET':
-        feed = getSureBets()["surebets"]
-        feed = [feed[i:i+2] for i in range(0, len(feed), 2)]
-
-        return render_template('surebets.html', bets_rows = feed, mapping = ODD_TYPES_IDS)
-
-    elif request.method == 'POST':
-        try:
-            data = loads(b64decode(request.form['bet'].replace('b\'', '').replace('\'', '')))
-            max_amount = int(request.form['max_amount'])
-            to_add = []
-            for k in data["odds"].keys():
-                to_bet = float(str_float(max_amount / data["odds"][k]["price"]))
-                h = History(data["match"]['id'],
-                            data["match"]["home"],
-                            data["match"]["away"],
-                            ODD_TYPES_IDS[data["odds"][k]["type_id"]],
-                            data["odds"][k]["price"], to_bet)
-                to_add.append(h)
-                nav = loads(data["odds"][k]["nav"])
-                nav["type_id"] = data["odds"][k]["type_id"]
-                nav["hc"] = data["odds"][k]["hc"]
-
-                bot.login(data["odds"][k]["bookmaker"]["name"])
-                bot.bet(data["odds"][k]["bookmaker"]["name"], nav, to_bet)
-
-            for e in to_add:
-                db.session.add(e)
-            db.session.commit()
-        except Exception as e:
-            logging.warn("Can't bet: {}".format(e))
-
-        # TODO: return successful/failed bet (+ Javascript popup box in HTML template)
-        return redirect('/surebets', code=302)
+    return render_template('surebets.html')
 
 @app.route('/history')
 def history():
-    return render_template('history.html', history = History.query.order_by(asc(History.time)).all())
+    return render_template('history.html', history = History.query.order_by(desc(History.time)).all())

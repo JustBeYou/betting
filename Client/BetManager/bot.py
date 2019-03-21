@@ -71,7 +71,7 @@ def scroll():
 
 def confirm():
     try:
-        WebDriverWait(driver, 3).until(EC.alert_is_present())
+        WebDriverWait(driver, 2).until(EC.alert_is_present())
         alert = driver.switch_to_alert()
         alert.accept()
     except TimeoutException:
@@ -80,7 +80,7 @@ def confirm():
 def alert_text():
     text = ""
     try:
-        WebDriverWait(driver, 3).until(EC.alert_is_present())
+        WebDriverWait(driver, 2).until(EC.alert_is_present())
         alert = driver.switch_to_alert()
         text = alert.text
         alert.accept()
@@ -128,6 +128,7 @@ class Pinnacle(object):
 
         scrolls = 0
         while scrolls < 80:
+            scrolls += 1
             try:
                el = driver.find_element_by_xpath('//a[contains(@href, "Alternate") and contains(@href, \"{}\")]'.format(nav["arbmate"]["eventId"]))
                el.click()
@@ -140,7 +141,6 @@ class Pinnacle(object):
         el = driver.find_element_by_xpath('//a[contains(@href, \"{}\")]'.format(nav["nav"]))
         driver.execute_script("arguments[0].click()", el)
 
-        time.sleep(0.5)
         confirm()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').click()
         driver.find_element(By.XPATH, '//input[@class="stakeInput"]').clear()
@@ -235,9 +235,11 @@ class OneXBet(object):
 
         if DEBUG_BETTING:
             logging.info("Actual betting is disabled (1xbet)")
+            return False
+
         el.click()
 
-        time.sleep(2)
+        time.sleep(5)
         return True
 
 # Generic wrappers for login/betting
@@ -257,7 +259,8 @@ def bet(bookmaker, nav, amount):
     return False
 
 # Default initialization
-init()
+if not DEBUG_BOT_DISABLED:
+    init()
 
 # Testing code
 def main():
